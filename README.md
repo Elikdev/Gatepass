@@ -1,7 +1,7 @@
 # GatePass
 > Short description of gatepass
 
-One or two paragraph statement on the fuuctions of gatepass
+One or two paragraph statement on the features of gatepass 
 
 ![Gatepass logo](gatepass_logo.PNG)
 
