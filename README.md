@@ -49,7 +49,7 @@ Are you willing to contribute to this project? You can contribute in many areas 
 
 ### Endpoint Documentation
 
-All responses must follow the format specified in the online [swagger documentation](https://gatepass.herokuapp.com/). This should be your first go to as this will be the live server with the most trustworthy documentation.
+All responses must follow the format specified in the online [documentation](https://gatepass.herokuapp.com/). This should be your first go to as this will be the live server with the most trustworthy documentation.
 
 ### Before Submitting Pull Request
 
@@ -75,8 +75,8 @@ git push origin <branch-name>
 
 ## Authors
 
-- Jimoh Rildwan Adekunle - [emailAddress](jemohkunle2007@gmail.com)
-- Odutoye Kolade Elijah - [emailAddress](koladeodutoye9913@gmail.com)
+- Jimoh Rildwan Adekunle - jemohkunle2007@gmail.com
+- Odutoye Kolade Elijah - koladeodutoye9913@gmail.com
 
 ## License
 
