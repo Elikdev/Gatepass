@@ -71,7 +71,7 @@ git push origin <branch-name>
 - Application Model
 - App users Model
 
-> Please see the [complete Schema Design Document](models/README.md).
+> Please see the [complete Schema Design Document](src/models/README.md).
 
 ## Authors
 
