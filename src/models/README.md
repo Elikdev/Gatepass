@@ -3,8 +3,8 @@
 ## Applications
 
 ```yaml
-app_name: String # required
-app_unique_id: String # required
+app_name: String # required, min: 6 max: 24 chars
+app_id: String # required, created internally when app is registered
 app_users: ObjectId # required, ref: App-Users
 app_token: String # required
 status: String # required
@@ -14,8 +14,8 @@ description: String # required
 ## User(organisation)
 
 ```yaml
-name: String # required
-organisation_name: string # required
+fullname: String # required
+organisation_name: string # required, strictly alphanumeric with only "_" allowed
 email: String # required
 password: String # required
 secret-question:  String #required

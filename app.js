@@ -2,6 +2,9 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const morgan = require("morgan");
 const cors = require("cors");
+const dbConnect = require("./src/config/db");
+
+dbConnect();
 
 const app = express();
 
