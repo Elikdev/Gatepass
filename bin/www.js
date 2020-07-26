@@ -1,5 +1,6 @@
 const http = require("http");
 const app = require("../app");
+const { PORT } = require("../src/config/");
 
 const normailizePort = (val) => {
 	const port = parseInt(val, 10);
@@ -15,7 +16,7 @@ const normailizePort = (val) => {
 	return false;
 };
 
-const port = normailizePort(process.env.PORT || "5000");
+const port = normailizePort(PORT);
 
 app.set("port", port);
 
