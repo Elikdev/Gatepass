@@ -1,8 +1,11 @@
 const bcrypt = require("bcryptjs");
 const { User } = require("../models/");
 const { red } = require("chalk");
-const { sendActivationEmail } = require("../helpers/nodemailer");
-const { EMAIL_SECRET } = require("../config/");
+const { sendActivationEmail, 
+	sendInvalidUserLoginAttempt, 
+} = require("../helpers/nodemailer");
+const authHelper = require("../helpers/auth");
+const { EMAIL_SECRET } = require("../config");
 const jwt = require("jsonwebtoken");
 
 exports.userSignUp = async (req, res) => {
@@ -15,8 +18,7 @@ exports.userSignUp = async (req, res) => {
 		security_answer,
 	} = req.body;
 	try {
-		//hash password before actually saving to database
-		const hashedPassword = await bcrypt.hash(password, 10);
+		const hashedPassword = authHelper.hashPassword(password);
 
 		const user = new User({
 			fullname,
@@ -48,7 +50,6 @@ exports.userSignUp = async (req, res) => {
 				"Your have successfully created a new account with gatepass. Check your email, an activation mail has been sent to you.",
 		});
 	} catch (error) {
-		//catch any error
 		console.log(red(`Error from user sign up >>> ${error.message} `));
 		return res
 			.status(500)
@@ -56,14 +57,10 @@ exports.userSignUp = async (req, res) => {
 	}
 };
 
-//verify user account
 exports.accountVerification = async (req, res) => {
 	const { token, email } = req.query;
 	try {
-		//check the token
-		const { userId } = await jwt.verify(token, EMAIL_SECRET);
-
-		//check if user has already been confirmed
+		const { userId } = jwt.verify(token, EMAIL_SECRET);
 		const user = await User.findById(userId);
 
 		if (user.confirmed) {
@@ -88,6 +85,76 @@ exports.accountVerification = async (req, res) => {
 		});
 	} catch (error) {
 		console.log(red(`Error from user verification >>> ${error.message}`));
+		return res
+			.status(500)
+			.json({ message: "Something went wrong. Try again later" });
+	}
+};
+
+exports.userSignIn = async (req, res) => {
+	const {
+		email,
+		password,
+		security_answer,
+		add_location,
+	} = req.body;
+	// Get the user's sign in location
+	// const signInLocation = req.ip; // trial
+	try {
+		// check if user exists
+		const user = await User.findOne({ email });
+		if (!user) {
+			return res.status(404).json({
+				message: "You Entered an incorrect Email or Password",
+			});
+		}
+
+		// check if user is verified/activated
+		if (!user.confirmed) {
+			return res.status(401).json({
+				message: "You have to verify your account",
+			});
+		}
+
+		// check if password coressponds with the saved one
+		const isPasswordValid = authHelper.comparePassword(password, user.password);
+		if (!isPasswordValid) {
+			return res.status(401).json({
+				message: "You Entered an incorrect Email or Password",
+			});
+		}
+
+		// check if the sign in location is not in the locations array
+		// const isNewLocation = !user.locations.includes(signInLocation);
+		// if (isNewLocation) {
+		// 	// asks for the answer to the security question
+		// 	if (security_answer === user.security_answer.toString()) {
+		// 		// user decides if the new location should be added or not
+		// 		// if user selects yes
+		// 		if (add_location === 'yes') {
+		// 			// add the location and save
+		// 			user.locations.push(signInLocation);
+		// 			await user.save();
+		// 		}
+		// 	} else {
+		// 		// if security answer is incorrect
+		// 		// send mail to user that some one tried to login 
+		// 		await sendInvalidUserLoginAttempt(user, signInLocation);
+		// 		return res.status(401).json({
+		// 			message: "Incorrect answer",
+		// 		});
+		// 	}
+		// }
+
+		// create a token with userId encrypted
+		const token = authHelper.createJwtToken({ userId: user._id });
+		return res.status(200).json({
+			message:
+				"You have successfully logged in..",
+			token,
+		});
+	} catch (error) {
+		console.log(red(`Error from user sign in >>> ${error.message}`));
 		return res
 			.status(500)
 			.json({ message: "Something went wrong. Try again later" });
