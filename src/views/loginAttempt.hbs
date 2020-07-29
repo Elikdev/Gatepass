@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Account verification</title>
+    <title>Gatepass account sign in from a new location</title>
     <style>
         * {
             margin: 0;
@@ -61,7 +61,7 @@
             text-transform: uppercase;
         }
 
-        .section .simple {
+        .section span.notice {
             color: #1968c3;
             font-size: 0.7rem;
         }
@@ -75,18 +75,19 @@
     </div>
 
     <div class="section">
-        <h1>VERIFY EMAIL</h1>
+        <h1>Gatepass account sign in from a new location</h1>
         <p>
-            <span>{{name}}</span>, we are happy to have you create an account with
-            us
+            If this was you, you're all set!
         </p>
-        <p>
-            Click or copy the link below to verify your email and activate your
-            account
-        </p>
-        <p>{{activationLink}}</p>
 
-        <p class="simple">If you did not sign up at gatepass, ignore this email</p>
+        <p> 
+            If this wasn't you, <span class="notice">please change your password</span> below to help secure your account.
+            <br>
+            {{changePasswordLink}}
+        </p>
+        <h5>
+            Sign in Location: <span>{{location}} </span>
+        </h5>
     </div>
 </body>
 

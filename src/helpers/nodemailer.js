@@ -6,11 +6,8 @@ const {
 	EMAIL_ADDRESS,
 	EMAIL_PASSWORD,
 	EMAIL_SECRET,
-	HOST,
-	PORT,
 } = require("../config/");
 
-//mail-setup
 const configuration = () => {
 	return nodemailer.createTransport({
 		service: "Gmail",
@@ -22,26 +19,27 @@ const configuration = () => {
 	});
 };
 
+const hbsOptions = {
+	viewEngine: {
+		extName: ".hbs",
+		defaultLayout: "",
+	},
+	viewPath: "./src/views/",
+	extName: ".hbs",
+};
+
+const transport = configuration();
+transport.use("compile", hbs(hbsOptions));
+
+
 const sendActivationEmail = async (data) => {
-	const transport = configuration();
 	const userEmail = data.email;
 	const userName = data.fullname;
 	const verificationToken = jwt.sign({ userId: data._id }, EMAIL_SECRET, {
 		expiresIn: "1d",
 	});
 
-	const generateLink = `http://${HOST}:${PORT}/api/v1/auth/verify?email=${userEmail}&token=${verificationToken}`;
-
-	const hbsOptions = {
-		viewEngine: {
-			extName: ".hbs",
-			defaultLayout: "",
-		},
-		viewPath: "./src/views/",
-		extName: ".hbs",
-	};
-
-	transport.use("compile", hbs(hbsOptions));
+	const generateLink = `http:\/\/${req.headers.host}\/api\/v1\/auth\/verify?email=${userEmail}&token=${verificationToken}`;
 
 	const msg = {
 		from: EMAIL_ADDRESS,
@@ -55,12 +53,35 @@ const sendActivationEmail = async (data) => {
 		},
 	};
 
-	//send mail
 	let info = await transport.sendMail(msg);
 	console.log(blue(`mail sent succcessfully >>> ${info.messageId}`));
 	return;
 };
 
+const sendInvalidUserLoginAttempt = async (data, location) => {
+	const userEmail = data.email;
+
+	// this link should change depending on what you set as the route to forgotPassword controller
+	const forgotPasswordLink = `http:\/\/${req.headers.host}\/api\/v1\/auth\/forgotPassword`;
+
+	const msg = {
+		from: EMAIL_ADDRESS,
+		to: userEmail,
+		subject: "Gatepass account sign in from a new location",
+		text: "testing text",
+		template: "loginAttempt",
+		context: {
+			changePasswordLink: forgotPasswordLink,
+			location: location,
+		},
+	};
+
+	let { messageId } = await transport.sendMail(msg);
+	console.log(blue(`mail sent succcessfully >>> ${messageId}`));
+	return;
+};
+
 module.exports = {
 	sendActivationEmail,
+	sendInvalidUserLoginAttempt,
 };

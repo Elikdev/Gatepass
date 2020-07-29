@@ -41,6 +41,21 @@ const userSignUpValidationRules = () => {
 	];
 };
 
+const userSignInValidationRules = () => {
+	return [
+		body('email')
+			.notEmpty()
+			.isEmail()
+			.withMessage('Enter a valid email')
+			.normalizeEmail(),
+		body('password')
+			.notEmpty()
+			.isLength({ min: 6 })
+			.withMessage('Password must have at least 6 characters'),
+		// add custom validation for add_location and security answer
+	];
+};
+
 const validateError = (req, res, next) => {
 	const errors = validationResult(req);
 	if (errors.isEmpty()) {
@@ -56,5 +71,6 @@ const validateError = (req, res, next) => {
 
 module.exports = {
 	userSignUpValidationRules,
+	userSignInValidationRules,
 	validateError,
 };
