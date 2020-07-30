@@ -2,11 +2,7 @@ const nodemailer = require("nodemailer");
 const jwt = require("jsonwebtoken");
 const hbs = require("nodemailer-express-handlebars");
 const { blue } = require("chalk");
-const {
-	EMAIL_ADDRESS,
-	EMAIL_PASSWORD,
-	EMAIL_SECRET,
-} = require("../config/");
+const { EMAIL_ADDRESS, EMAIL_PASSWORD, EMAIL_SECRET } = require("../config/");
 
 const configuration = () => {
 	return nodemailer.createTransport({
@@ -31,8 +27,7 @@ const hbsOptions = {
 const transport = configuration();
 transport.use("compile", hbs(hbsOptions));
 
-
-const sendActivationEmail = async (data) => {
+const sendActivationEmail = async (data, req) => {
 	const userEmail = data.email;
 	const userName = data.fullname;
 	const verificationToken = jwt.sign({ userId: data._id }, EMAIL_SECRET, {
@@ -58,7 +53,7 @@ const sendActivationEmail = async (data) => {
 	return;
 };
 
-const sendInvalidUserLoginAttempt = async (data, location) => {
+const sendInvalidUserLoginAttempt = async (data, location, req) => {
 	const userEmail = data.email;
 
 	// this link should change depending on what you set as the route to forgotPassword controller
@@ -81,7 +76,33 @@ const sendInvalidUserLoginAttempt = async (data, location) => {
 	return;
 };
 
+const passwordResetEmail = async (data, req) => {
+	const userEmail = data.email;
+	const verificationToken = jwt.sign({ userId: data._id }, EMAIL_SECRET, {
+		expiresIn: "1d",
+	});
+
+	const resetPasswordLink = `http:\/\/${req.headers.host}\/api\/v1\/auth\/reset-password?token=${verificationToken}`;
+
+	const msg = {
+		from: EMAIL_ADDRESS,
+		to: userEmail,
+		subject: "Password Reset Link",
+		text: "testing text",
+		template: "passwordReset",
+		context: {
+			passwordResetLink: resetPasswordLink,
+			name: data.fullname,
+		},
+	};
+
+	let { messageId } = await transport.sendMail(msg);
+	console.log(blue(`mail sent succcessfully >>> ${messageId}`));
+	return;
+};
+
 module.exports = {
 	sendActivationEmail,
 	sendInvalidUserLoginAttempt,
+	passwordResetEmail,
 };
