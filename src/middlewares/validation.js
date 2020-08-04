@@ -52,7 +52,6 @@ const userSignInValidationRules = () => {
 			.notEmpty()
 			.isLength({ min: 6 })
 			.withMessage("Password must have at least 6 characters"),
-		// add custom validation for add_location and security answer
 	];
 };
 
@@ -64,6 +63,25 @@ const resetPasswordValRules = () => {
 			.withMessage("Password must be at least 6 characters long"),
 	];
 };
+
+const changePasswordValRules = () => {
+	return [
+		body("old_password")
+			.notEmpty()
+			.withMessage("Old password field required"),
+		body("new_password")
+			.notEmpty()
+			.withMessage('A new password is required')
+			.isLength({ min: 6 })
+			.withMessage("Password must be at least 6 characters long")
+			.custom((value, { req }) => value !== req.body.old_password)
+			.withMessage("Ensure you enter a new password"),
+		body("confirm_password", "passwords do not match")
+			.exists()
+			.custom((val, { req }) => val === req.body.new_password),
+	];
+};
+
 const validateError = (req, res, next) => {
 	const errors = validationResult(req);
 	if (errors.isEmpty()) {
@@ -81,5 +99,6 @@ module.exports = {
 	userSignUpValidationRules,
 	userSignInValidationRules,
 	resetPasswordValRules,
+	changePasswordValRules,
 	validateError,
 };

@@ -20,8 +20,16 @@ const createJwtToken = payload => {
     );
 };
 
+const verifyJwtToken = token => {
+    return jwt.verify(
+        token,
+        config.JWT_SECRET_KEY
+    );
+};
+
 module.exports = {
     comparePassword,
     hashPassword,
     createJwtToken,
-}
+    verifyJwtToken,
+};

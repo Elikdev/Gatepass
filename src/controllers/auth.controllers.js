@@ -33,10 +33,8 @@ exports.userSignUp = async (req, res) => {
 			security_answer,
 		});
 
-		//initialize the ipgeolocation api
 		const ipgeolocationApi = new IPGeolocationAPI(GEOLOCSECRET, false);
 
-		// Function to handle response from IP Geolocation API
 		function handleResponse(json) {
 			if (json.message == "Internet is not connected!") {
 				return res.status(412).json({
@@ -44,18 +42,15 @@ exports.userSignUp = async (req, res) => {
 				});
 			}
 
-			//grab the location and save to db
 			const location = `${json.city}, ${json.country_name}`;
+			console.log("location is", location);
 			user.locations.push(location);
 		}
 
-		// get location from the incoming IP address
 		ipgeolocationApi.getGeolocation(handleResponse);
 
-		//send a confirmation mail to the new user
 		await sendActivationEmail(user, req);
 
-		//save user to database after the confirmation has been sent
 		await user.save();
 
 		return res.status(201).json({
@@ -64,9 +59,7 @@ exports.userSignUp = async (req, res) => {
 		});
 	} catch (error) {
 		console.log(red(`Error from user sign up >>> ${error.message} `));
-		return res
-			.status(500)
-			.json({ message: "Something went wrong. Try again later" });
+		return next(error);
 	}
 };
 
@@ -105,20 +98,16 @@ exports.accountVerification = async (req, res) => {
 		});
 	} catch (error) {
 		console.log(red(`Error from user verification >>> ${error.message}`));
-		return res
-			.status(500)
-			.json({ message: "Something went wrong. Try again later" });
+		return next(error);
 	}
 };
 
 exports.userSignIn = async (req, res) => {
 	let { email, password, security_answer, add_location } = req.body;
 
-	//initialize the ipgeolocation api to get the sign in location
 	const ipgeolocationApi = new IPGeolocationAPI(GEOLOCSECRET, false);
 
 	try {
-		// check if user exists
 		const user = await User.findOne({ email });
 		if (!user) {
 			return res.status(404).json({
@@ -126,14 +115,12 @@ exports.userSignIn = async (req, res) => {
 			});
 		}
 
-		// check if user is verified/activated
 		if (!user.confirmed) {
 			return res.status(401).json({
 				message: "You have to verify your account",
 			});
 		}
 
-		// check if password coressponds with the saved one
 		const isPasswordValid = authHelper.comparePassword(password, user.password);
 		if (!isPasswordValid) {
 			return res.status(401).json({
@@ -141,12 +128,10 @@ exports.userSignIn = async (req, res) => {
 			});
 		}
 
-		// get location from the incoming IP address
 		ipgeolocationApi.getGeolocation(handleResponse);
 
 		let signInLocation;
 
-		// Function to handle response from IP Geolocation API
 		async function handleResponse(json) {
 			if (json.message == "Internet is not connected!") {
 				return res.status(412).json({
@@ -156,7 +141,6 @@ exports.userSignIn = async (req, res) => {
 			if (json.ip) {
 				signInLocation = `${json.city}, ${json.country_name}`;
 
-				//if no security answer provided, prompt user to include it
 				if (!user.locations.includes(signInLocation) && !security_answer) {
 					return res.status(401).json({
 						message:
@@ -165,19 +149,16 @@ exports.userSignIn = async (req, res) => {
 					});
 				}
 
-				//security answer provided
 				if (!user.locations.includes(signInLocation) && security_answer) {
 					security_answer = security_answer;
 
-					//check if security answer is the correct answer to the corresponding user's security question
 					if (security_answer !== user.security_answer && !add_location) {
-						await sendInvalidUserLoginAttempt(user, signInLocation, req); //if not send a mail
+						await sendInvalidUserLoginAttempt(user, signInLocation, req); 
 						return res.status(401).json({
 							message: "Wrong answer provided",
 						});
 					}
 
-					//security answer provided but no add_location
 					if (security_answer === user.security_answer && !add_location) {
 						return res.status(412).json({
 							message:
@@ -185,12 +166,10 @@ exports.userSignIn = async (req, res) => {
 						});
 					}
 
-					//update the user's trusted locations if the answer was yes
 					if (security_answer === user.security_answer && add_location) {
 						add_location = add_location.toLowerCase();
 
 						if (add_location == "yes") {
-							//add to user trusted location
 							await User.findOneAndUpdate(
 								{ email: user.email },
 								{ $push: { locations: signInLocation } }
@@ -198,7 +177,7 @@ exports.userSignIn = async (req, res) => {
 						}
 					}
 				}
-				// create a token with userId encrypted
+
 				const token = authHelper.createJwtToken({ userId: user._id });
 				return res.status(200).json({
 					message: "You have successfully logged in..",
@@ -208,9 +187,7 @@ exports.userSignIn = async (req, res) => {
 		}
 	} catch (error) {
 		console.log(red(`Error from user sign in >>> ${error.message}`));
-		return res
-			.status(500)
-			.json({ message: "Something went wrong. Try again later" });
+		return next(error);
 	}
 };
 
@@ -239,20 +216,18 @@ exports.forgotPassword = async (req, res) => {
 		});
 	} catch (error) {
 		console.log(red(`Error from user forgot password >>> ${error.message}`));
-		return res.status(500).json({
-			message: "Something went wrong. Try again later",
-		});
+		return next(error);
 	}
 };
 
-exports.changePassword = async (req, res) => {
+exports.resetPassword = async (req, res) => {
 	const { token } = req.query;
 	const { new_password } = req.body;
 
 	try {
-		const { userId } = await jwt.verify(token, EMAIL_SECRET);
+		const { userId } = jwt.verify(token, EMAIL_SECRET);
 
-		const hashedPassword = await authHelper.hashPassword(new_password);
+		const hashedPassword = authHelper.hashPassword(new_password);
 
 		const user = await User.findOneAndUpdate(
 			{ _id: userId },
@@ -269,9 +244,44 @@ exports.changePassword = async (req, res) => {
 			message: "Your password has been successfully changed. Proceed to login",
 		});
 	} catch (error) {
-		console.log(red(`Error from user change password >>> ${error.message}`));
-		return res.status(500).json({
-			message: "Something went wrong. Try again later",
+		console.log(red(`Error from user reset password >>> ${error.message}`));
+		return next(error);
+	}
+};
+
+// for logged in users to change password
+exports.changePassword = async (req, res) => {
+	const { password, _id } = req.user;
+	const { old_password, new_password, confirm_password } = req.body;
+
+	try {
+		// check if password corresponds with one in user's DB
+		const isPasswordCorrect = authHelper.comparePassword(old_password, password);
+		if (!isPasswordCorrect) {
+			return res.status(401).json({
+                message: "Ensure you enter the right credentials",
+            });
+		}
+
+		// hash the password
+		const hashedPassword = authHelper.hashPassword(new_password);
+		const user = await User.findOneAndUpdate(
+			{ _id },
+			{ $set: { password: hashedPassword } }
+		);
+		
+		if (!user) {
+			return res.status(404).json({
+				message: "User does not exist",
+			});
+		}
+
+		return res.status(200).json({
+			message: "Your password updated successfully",
 		});
+
+	} catch (error) {
+		console.log(red(`Error from user change password >>> ${error.message}`));
+		return next(error);
 	}
 };
