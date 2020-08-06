@@ -1,5 +1,5 @@
-const { body, validationResult } = require("express-validator");
-const { User } = require("../models/");
+const { check, body, validationResult } = require("express-validator");
+const { User, App } = require("../models/");
 
 const userSignUpValidationRules = () => {
 	return [
@@ -66,12 +66,10 @@ const resetPasswordValRules = () => {
 
 const changePasswordValRules = () => {
 	return [
-		body("old_password")
-			.notEmpty()
-			.withMessage("Old password field required"),
+		body("old_password").notEmpty().withMessage("Old password field required"),
 		body("new_password")
 			.notEmpty()
-			.withMessage('A new password is required')
+			.withMessage("A new password is required")
 			.isLength({ min: 6 })
 			.withMessage("Password must be at least 6 characters long")
 			.custom((value, { req }) => value !== req.body.old_password)
@@ -82,6 +80,46 @@ const changePasswordValRules = () => {
 	];
 };
 
+const appRegisterValRules = () => {
+	return [
+		body("app_name")
+			.notEmpty()
+			.withMessage("Name of the application is required"),
+		body("description")
+			.notEmpty()
+			.withMessage("Description of the application is required")
+			.isLength({ min: 10 })
+			.withMessage(
+				"Description of application should be at least 8 characters long"
+			),
+		body("unique_id")
+			.notEmpty()
+			.withMessage("Application's unique Id is required"),
+		body("app_name").custom((val) => {
+			return App.findOne({ app_name: val }).then((app) => {
+				if (app) {
+					return Promise.reject(
+						"App name has been taken. You need to change it"
+					);
+				}
+			});
+		}),
+	];
+};
+const statusField = ["enable", "disable"];
+
+const updateValidationRules = () => {
+	return [
+		check("status").custom((val) => {
+			if (!statusField.includes(val))
+				throw new Error("Status can only be enable or disable");
+			return true;
+		}),
+		body("app_name")
+			.notEmpty()
+			.withMessage("Application's name must be included"),
+	];
+};
 const validateError = (req, res, next) => {
 	const errors = validationResult(req);
 	if (errors.isEmpty()) {
@@ -100,5 +138,7 @@ module.exports = {
 	userSignInValidationRules,
 	resetPasswordValRules,
 	changePasswordValRules,
+	appRegisterValRules,
+	updateValidationRules,
 	validateError,
 };
