@@ -12,7 +12,7 @@ const appSchema = new Schema(
 			type: String,
 			required: true,
 		},
-		app_id: {
+		unique_id: {
 			type: String,
 		},
 		status: {
