@@ -14,11 +14,12 @@ exports.registerNewApp = async (req, res) => {
 			unique_id,
 		});
 
-		const app_token = await jwt.sign({ app_name, unique_id }, APP_SECRET, {
+		const app_token = jwt.sign({ app_name, unique_id }, APP_SECRET, {
 			expiresIn: "1y",
 		});
 
 		app.app_token = app_token;
+		app.app_admins.push(user._id);
 
 		await User.findOneAndUpdate(
 			{ _id: user._id },
@@ -35,13 +36,14 @@ exports.registerNewApp = async (req, res) => {
 	} catch (error) {
 		console.log(red(`Error in registering application >>> ${error.message}`));
 		return res.status(500).json({
-			message: "An error occured. Try again later",
+			errors: {
+				message: "Something went wrong, please try again or check back for a fix",
+			},
 		});
 	}
 };
 
 // Disable and enable application
-
 exports.changeAppStatus = async (req, res) => {
 	let { status } = req.query;
 	const { app_name } = req.body;
@@ -106,7 +108,70 @@ exports.changeAppStatus = async (req, res) => {
 			red(`Error in changing application's status >>> ${error.message}`)
 		);
 		return res.status(500).json({
-			message: "An error occured. Try again later",
+			errors: {
+				message: "Something went wrong, please try again or check back for a fix",
+			},
+		});
+	}
+};
+
+exports.viewAllUserApps = async (req, res) => {
+	// set default simple pagination if no limit or page is passed
+	const { page = 1, limit = 10, filter } = req.query;
+	const { _id } = req.user;
+	try {
+		let apps;
+		// see only apps that you own or you're an organization admin added by the owner
+		if (filter) {
+			// check if filter by active
+			if (filter.toString() == "active") {
+				apps = await App.find({
+					app_admins: _id,
+					status: "active",
+				})
+				.limit(limit * 1)
+				.skip((page - 1) * limit)
+				.exec();
+				// if filter by desabled
+			} else if (filter.toString() == "disabled") {
+				apps = await App.find({
+					app_admins: _id,
+					status: "disabled",
+				})
+				.limit(limit * 1)
+				.skip((page - 1) * limit)
+				.exec();
+	
+			}	
+		} else {
+			apps = await App.find({
+				app_admins: _id,
+			})
+			.limit(limit * 1)
+			.skip((page - 1) * limit)
+			.exec();
+		}
+		const count = apps.length;
+
+		if (count === 0) {
+			return res.status(404).json({
+				message: "No registered applications available for this organisation on Gatepass",
+			});
+		}
+		return res.status(200).json({
+			message: "Apps found",
+			count,
+			apps,
+			totalPages: Math.ceil(count / limit),
+            currentPage: page,
+		});
+
+	} catch (error) {
+		console.log(red(`Error from getting all registered apps >>> ${error.message}`));
+		return res.status(500).json({
+			errors: {
+				message: "Something went wrong, please try again or check back for a fix",
+			},
 		});
 	}
 };

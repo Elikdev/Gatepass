@@ -59,7 +59,11 @@ exports.userSignUp = async (req, res) => {
 		});
 	} catch (error) {
 		console.log(red(`Error from user sign up >>> ${error.message} `));
-		return next(error);
+		return res.status(500).json({
+			errors: {
+				message: "Something went wrong, please try again or check back for a fix",
+			},
+		});
 	}
 };
 
@@ -98,7 +102,11 @@ exports.accountVerification = async (req, res) => {
 		});
 	} catch (error) {
 		console.log(red(`Error from user verification >>> ${error.message}`));
-		return next(error);
+		return res.status(500).json({
+			errors: {
+				message: "Something went wrong, please try again or check back for a fix",
+			},
+		});
 	}
 };
 
@@ -187,7 +195,11 @@ exports.userSignIn = async (req, res) => {
 		}
 	} catch (error) {
 		console.log(red(`Error from user sign in >>> ${error.message}`));
-		return next(error);
+		return res.status(500).json({
+			errors: {
+				message: "Something went wrong, please try again or check back for a fix",
+			},
+		});
 	}
 };
 
@@ -216,7 +228,11 @@ exports.forgotPassword = async (req, res) => {
 		});
 	} catch (error) {
 		console.log(red(`Error from user forgot password >>> ${error.message}`));
-		return next(error);
+		return res.status(500).json({
+			errors: {
+				message: "Something went wrong, please try again or check back for a fix",
+			},
+		});
 	}
 };
 
@@ -245,7 +261,11 @@ exports.resetPassword = async (req, res) => {
 		});
 	} catch (error) {
 		console.log(red(`Error from user reset password >>> ${error.message}`));
-		return next(error);
+		return res.status(500).json({
+			errors: {
+				message: "Something went wrong, please try again or check back for a fix",
+			},
+		});
 	}
 };
 
@@ -282,6 +302,10 @@ exports.changePassword = async (req, res) => {
 
 	} catch (error) {
 		console.log(red(`Error from user change password >>> ${error.message}`));
-		return next(error);
+		return res.status(500).json({
+			errors: {
+				message: "Something went wrong, please try again or check back for a fix",
+			},
+		});
 	}
 };
