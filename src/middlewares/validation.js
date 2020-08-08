@@ -106,6 +106,7 @@ const appRegisterValRules = () => {
 		}),
 	];
 };
+
 const statusField = ["enable", "disable"];
 
 const updateValidationRules = () => {
@@ -120,6 +121,16 @@ const updateValidationRules = () => {
 			.withMessage("Application's name must be included"),
 	];
 };
+
+const viewAllUserAppsRules = () => {
+	return [
+		check("filter")
+			.optional()
+			.isIn(["active", "disabled"])
+			.withMessage("Filtering your apps can either be active or disabled"),
+	];
+};
+
 const validateError = (req, res, next) => {
 	const errors = validationResult(req);
 	if (errors.isEmpty()) {
@@ -140,5 +151,6 @@ module.exports = {
 	changePasswordValRules,
 	appRegisterValRules,
 	updateValidationRules,
+	viewAllUserAppsRules,
 	validateError,
 };

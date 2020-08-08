@@ -24,6 +24,12 @@ const appSchema = new Schema(
 			type: String,
 			unique: true,
 		},
+		app_admins: [
+			{
+				type: Schema.Types.ObjectId,
+				ref: 'User',
+			},
+		],
 	},
 	{
 		timestamps: true,
