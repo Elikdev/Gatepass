@@ -4,7 +4,8 @@ const authHelper = require("../helpers/auth");
 
 // middleware to authenticate users accessing secure routes 
 const checkAuth = async (req, res, next) => {
-    if (routes.secureRoutes.includes(req.path)) {
+    // did this because path with params do not get authenticated by this middleware
+    if (routes.secureRoutes.includes(req.path) || !routes.unsecureRoutes.includes(req.path)) {
         if (!req.headers.authorization) {
             return res.status(412).json({
                 message: "Access denied!! Missing authorization credentials",

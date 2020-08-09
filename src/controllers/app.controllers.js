@@ -116,14 +116,11 @@ exports.changeAppStatus = async (req, res) => {
 };
 
 exports.viewAllUserApps = async (req, res) => {
-	// set default simple pagination if no limit or page is passed
 	const { page = 1, limit = 10, filter } = req.query;
 	const { _id } = req.user;
 	try {
 		let apps;
-		// see only apps that you own or you're an organization admin added by the owner
 		if (filter) {
-			// check if filter by active
 			if (filter.toString() == "active") {
 				apps = await App.find({
 					app_admins: _id,
@@ -132,7 +129,6 @@ exports.viewAllUserApps = async (req, res) => {
 				.limit(limit * 1)
 				.skip((page - 1) * limit)
 				.exec();
-				// if filter by desabled
 			} else if (filter.toString() == "disabled") {
 				apps = await App.find({
 					app_admins: _id,
@@ -168,6 +164,44 @@ exports.viewAllUserApps = async (req, res) => {
 
 	} catch (error) {
 		console.log(red(`Error from getting all registered apps >>> ${error.message}`));
+		return res.status(500).json({
+			errors: {
+				message: "Something went wrong, please try again or check back for a fix",
+			},
+		});
+	}
+};
+
+exports.updateApplication = async (req, res) => {
+	const { appId } = req.params;
+	const { _id } = req.user;
+	try {
+		const app = App.findOneAndUpdate(
+			{
+				_id: appId,
+				app_admins: _id,
+			},
+			{ ...req.body }, 
+			{ new: true }
+		);
+
+		if (!app) {
+			return res.status(404).json({
+				message: "App doesn\'t exist or has been deleted",
+			});
+		}
+		if (app.status === "disabled") {
+			return res.status(401).json({
+				message: "App is disabled. You need to enable it before you can use it",
+			});
+		}
+		
+		return res.status(200).json({
+            message: "Application has been updated successfully",
+		});
+		
+	} catch (error) {
+		console.log(red(`Error from updating application >>> ${error.message}`));
 		return res.status(500).json({
 			errors: {
 				message: "Something went wrong, please try again or check back for a fix",
