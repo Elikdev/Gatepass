@@ -131,6 +131,22 @@ const viewAllUserAppsRules = () => {
 	];
 };
 
+const updateUserAppRules = () => {
+	return [
+		body("app_name")
+			.optional(),
+		body("description")
+			.optional()
+			.isLength({ min: 10 })
+			.withMessage(
+				"Description of application should be at least 8 characters long"
+			),
+		body("app_token")
+			.isEmpty()
+			.withMessage("You have no write access to update the app token"),
+	]
+};
+
 const validateError = (req, res, next) => {
 	const errors = validationResult(req);
 	if (errors.isEmpty()) {
@@ -152,5 +168,6 @@ module.exports = {
 	appRegisterValRules,
 	updateValidationRules,
 	viewAllUserAppsRules,
+	updateUserAppRules,
 	validateError,
 };
