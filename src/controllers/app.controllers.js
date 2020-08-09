@@ -195,9 +195,11 @@ exports.updateApplication = async (req, res) => {
 				message: "App is disabled. You need to enable it before you can use it",
 			});
 		}
+		
 		return res.status(200).json({
             message: "Application has been updated successfully",
-        });
+		});
+		
 	} catch (error) {
 		console.log(red(`Error from updating application >>> ${error.message}`));
 		return res.status(500).json({
