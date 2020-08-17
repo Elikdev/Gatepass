@@ -61,7 +61,8 @@ exports.userSignUp = async (req, res) => {
 		console.log(red(`Error from user sign up >>> ${error.message} `));
 		return res.status(500).json({
 			errors: {
-				message: "Something went wrong, please try again or check back for a fix",
+				message:
+					"Something went wrong, please try again or check back for a fix",
 			},
 		});
 	}
@@ -104,7 +105,8 @@ exports.accountVerification = async (req, res) => {
 		console.log(red(`Error from user verification >>> ${error.message}`));
 		return res.status(500).json({
 			errors: {
-				message: "Something went wrong, please try again or check back for a fix",
+				message:
+					"Something went wrong, please try again or check back for a fix",
 			},
 		});
 	}
@@ -161,7 +163,7 @@ exports.userSignIn = async (req, res) => {
 					security_answer = security_answer;
 
 					if (security_answer !== user.security_answer && !add_location) {
-						await sendInvalidUserLoginAttempt(user, signInLocation, req); 
+						await sendInvalidUserLoginAttempt(user, signInLocation, req);
 						return res.status(401).json({
 							message: "Wrong answer provided",
 						});
@@ -186,10 +188,17 @@ exports.userSignIn = async (req, res) => {
 					}
 				}
 
-				const token = authHelper.createJwtToken({ userId: user._id });
+				const token = authHelper.createJwtToken({ userId: user._id }, "1d");
+				const authServiceToken = authHelper.createJwtToken(
+					{
+						org_name: user.organization_name,
+					},
+					"1d"
+				);
 				return res.status(200).json({
 					message: "You have successfully logged in..",
 					token,
+					authServiceToken,
 				});
 			}
 		}
@@ -197,7 +206,8 @@ exports.userSignIn = async (req, res) => {
 		console.log(red(`Error from user sign in >>> ${error.message}`));
 		return res.status(500).json({
 			errors: {
-				message: "Something went wrong, please try again or check back for a fix",
+				message:
+					"Something went wrong, please try again or check back for a fix",
 			},
 		});
 	}
@@ -230,7 +240,8 @@ exports.forgotPassword = async (req, res) => {
 		console.log(red(`Error from user forgot password >>> ${error.message}`));
 		return res.status(500).json({
 			errors: {
-				message: "Something went wrong, please try again or check back for a fix",
+				message:
+					"Something went wrong, please try again or check back for a fix",
 			},
 		});
 	}
@@ -263,7 +274,8 @@ exports.resetPassword = async (req, res) => {
 		console.log(red(`Error from user reset password >>> ${error.message}`));
 		return res.status(500).json({
 			errors: {
-				message: "Something went wrong, please try again or check back for a fix",
+				message:
+					"Something went wrong, please try again or check back for a fix",
 			},
 		});
 	}
@@ -276,11 +288,14 @@ exports.changePassword = async (req, res) => {
 
 	try {
 		// check if password corresponds with one in user's DB
-		const isPasswordCorrect = authHelper.comparePassword(old_password, password);
+		const isPasswordCorrect = authHelper.comparePassword(
+			old_password,
+			password
+		);
 		if (!isPasswordCorrect) {
 			return res.status(401).json({
-                message: "Ensure you enter the right credentials",
-            });
+				message: "Ensure you enter the right credentials",
+			});
 		}
 
 		// hash the password
@@ -289,7 +304,7 @@ exports.changePassword = async (req, res) => {
 			{ _id },
 			{ $set: { password: hashedPassword } }
 		);
-		
+
 		if (!user) {
 			return res.status(404).json({
 				message: "User does not exist",
@@ -299,12 +314,12 @@ exports.changePassword = async (req, res) => {
 		return res.status(200).json({
 			message: "Your password updated successfully",
 		});
-
 	} catch (error) {
 		console.log(red(`Error from user change password >>> ${error.message}`));
 		return res.status(500).json({
 			errors: {
-				message: "Something went wrong, please try again or check back for a fix",
+				message:
+					"Something went wrong, please try again or check back for a fix",
 			},
 		});
 	}

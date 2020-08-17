@@ -4,7 +4,7 @@ const bodyParser = require("body-parser");
 const morgan = require("morgan");
 const cors = require("cors");
 const dbConnect = require("./src/config/db");
-const { checkAuth } = require("./src/middlewares/checkAuth");
+const { checkAuth, checkAppToken } = require("./src/middlewares/checkAuth");
 
 const { authRouter, appRouter } = require("./src/routes/");
 
@@ -27,6 +27,7 @@ app.get("/", (req, res) => {
 
 // use auth middleware
 app.use(checkAuth);
+app.use(checkAppToken);
 
 app.use("/api/v1/auth", authRouter);
 

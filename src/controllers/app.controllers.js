@@ -37,7 +37,8 @@ exports.registerNewApp = async (req, res) => {
 		console.log(red(`Error in registering application >>> ${error.message}`));
 		return res.status(500).json({
 			errors: {
-				message: "Something went wrong, please try again or check back for a fix",
+				message:
+					"Something went wrong, please try again or check back for a fix",
 			},
 		});
 	}
@@ -109,7 +110,8 @@ exports.changeAppStatus = async (req, res) => {
 		);
 		return res.status(500).json({
 			errors: {
-				message: "Something went wrong, please try again or check back for a fix",
+				message:
+					"Something went wrong, please try again or check back for a fix",
 			},
 		});
 	}
@@ -126,32 +128,32 @@ exports.viewAllUserApps = async (req, res) => {
 					app_admins: _id,
 					status: "active",
 				})
-				.limit(limit * 1)
-				.skip((page - 1) * limit)
-				.exec();
+					.limit(limit * 1)
+					.skip((page - 1) * limit)
+					.exec();
 			} else if (filter.toString() == "disabled") {
 				apps = await App.find({
 					app_admins: _id,
 					status: "disabled",
 				})
-				.limit(limit * 1)
-				.skip((page - 1) * limit)
-				.exec();
-	
-			}	
+					.limit(limit * 1)
+					.skip((page - 1) * limit)
+					.exec();
+			}
 		} else {
 			apps = await App.find({
 				app_admins: _id,
 			})
-			.limit(limit * 1)
-			.skip((page - 1) * limit)
-			.exec();
+				.limit(limit * 1)
+				.skip((page - 1) * limit)
+				.exec();
 		}
 		const count = apps.length;
 
 		if (count === 0) {
 			return res.status(404).json({
-				message: "No registered applications available for this organisation on Gatepass",
+				message:
+					"No registered applications available for this organisation on Gatepass",
 			});
 		}
 		return res.status(200).json({
@@ -159,14 +161,16 @@ exports.viewAllUserApps = async (req, res) => {
 			count,
 			apps,
 			totalPages: Math.ceil(count / limit),
-            currentPage: page,
+			currentPage: page,
 		});
-
 	} catch (error) {
-		console.log(red(`Error from getting all registered apps >>> ${error.message}`));
+		console.log(
+			red(`Error from getting all registered apps >>> ${error.message}`)
+		);
 		return res.status(500).json({
 			errors: {
-				message: "Something went wrong, please try again or check back for a fix",
+				message:
+					"Something went wrong, please try again or check back for a fix",
 			},
 		});
 	}
@@ -181,13 +185,13 @@ exports.updateApplication = async (req, res) => {
 				_id: appId,
 				app_admins: _id,
 			},
-			{ ...req.body }, 
+			{ ...req.body },
 			{ new: true }
 		);
 
 		if (!app) {
 			return res.status(404).json({
-				message: "App doesn\'t exist or has been deleted",
+				message: "App doesn't exist or has been deleted",
 			});
 		}
 		if (app.status === "disabled") {
@@ -195,16 +199,41 @@ exports.updateApplication = async (req, res) => {
 				message: "App is disabled. You need to enable it before you can use it",
 			});
 		}
-		
+
 		return res.status(200).json({
-            message: "Application has been updated successfully",
+			message: "Application has been updated successfully",
 		});
-		
 	} catch (error) {
 		console.log(red(`Error from updating application >>> ${error.message}`));
 		return res.status(500).json({
 			errors: {
-				message: "Something went wrong, please try again or check back for a fix",
+				message:
+					"Something went wrong, please try again or check back for a fix",
+			},
+		});
+	}
+};
+
+exports.catchApp = async (req, res) => {
+	try {
+		const app = req.app;
+
+		if (!app) {
+			return res.status(404).json({
+				message: "Error in getting app",
+			});
+		}
+
+		return res.status(200).json({
+			message: "Worked!",
+			app: app,
+		});
+	} catch (error) {
+		console.log(red(`Error in getting application >>> ${error.message}`));
+		return res.status(500).json({
+			errors: {
+				message:
+					"Something went wrong, please try again or check back for a fix",
 			},
 		});
 	}

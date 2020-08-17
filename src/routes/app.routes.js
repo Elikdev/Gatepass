@@ -4,6 +4,7 @@ const {
 	changeAppStatus,
 	viewAllUserApps,
 	updateApplication,
+	catchApp,
 } = require("../controllers/app.controllers");
 const {
 	appRegisterValRules,
@@ -16,8 +17,20 @@ const {
 const checkAppId = require("../middlewares/validateMongooseId");
 
 router.post("/new", appRegisterValRules(), validateError, registerNewApp);
-router.put("/update-status", updateValidationRules(), validateError, changeAppStatus);
+router.put(
+	"/update-status",
+	updateValidationRules(),
+	validateError,
+	changeAppStatus
+);
 router.get("/", viewAllUserAppsRules(), validateError, viewAllUserApps);
-router.patch("/update/:appId", checkAppId, updateUserAppRules(), validateError, updateApplication);
+router.patch(
+	"/update/:appId",
+	checkAppId,
+	updateUserAppRules(),
+	validateError,
+	updateApplication
+);
+router.get("/appone", catchApp);
 
 module.exports = router;

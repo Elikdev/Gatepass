@@ -10,14 +10,17 @@ const hashPassword = (password) => {
 	return bcrypt.hashSync(password, 10);
 };
 
-const createJwtToken = (payload) => {
+const createJwtToken = (payload, expIn) => {
 	return jwt.sign(payload, config.JWT_SECRET_KEY, {
-		expiresIn: "1d",
+		expiresIn: expIn,
 	});
 };
 
 const verifyJwtToken = (token) => {
 	return jwt.verify(token, config.JWT_SECRET_KEY);
+};
+const verifyAppToken = (token) => {
+	return jwt.verify(token, config.APP_SECRET);
 };
 
 module.exports = {
@@ -25,4 +28,5 @@ module.exports = {
 	hashPassword,
 	createJwtToken,
 	verifyJwtToken,
+	verifyAppToken,
 };
