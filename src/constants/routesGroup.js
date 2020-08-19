@@ -4,6 +4,7 @@ const secureRoutes = [
 	"/api/v1/apps/update-status",
 	"/api/v1/apps",
 	"/api/v1/apps/update/:appId",
+	"/api/v1/apps/:appId/add-admins",
 ];
 
 const unsecureRoutes = [
@@ -14,6 +15,7 @@ const unsecureRoutes = [
 	"/api/v1/auth/verify",
 	"/api/v1/auth/forgot-password",
 	"/api/v1/apps/appone",
+	"/api/v1/apps/invitation/accept",
 ];
 
 const authServiceRoutes = ["/api/v1/apps/appone"];

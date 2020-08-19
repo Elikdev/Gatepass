@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Application Admin Invitaion </title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            font-family: Helvetica, "sans-serif";
+        }
+
+        .header {
+            background: rgb(2, 0, 36);
+            background: linear-gradient(90deg,
+                    rgba(2, 0, 36, 1) 0%,
+                    rgba(94, 121, 9, 1) 36%,
+                    rgb(15, 112, 75) 100%);
+            color: #ffffff;
+            text-align: center;
+            padding-top: 4rem;
+            padding-bottom: 4rem;
+            width: 80%;
+            margin: 0 auto;
+        }
+
+        .header h1 {
+            font-weight: 700;
+            font-size: 4rem;
+            letter-spacing: 0.2rem;
+        }
+
+        .header small {
+            margin-top: 0.6rem;
+            font-size: 0.7rem;
+            word-spacing: 0.03rem;
+        }
+
+        .section {
+            width: 80%;
+            margin: 0 auto;
+            text-align: center;
+            padding-top: 3rem;
+        }
+
+        .section h1 {
+            color: #3179ecd8;
+            margin-bottom: 3rem;
+            font-size: 3rem;
+        }
+
+        .section p {
+            font-size: 1rem;
+            margin: 2rem 0;
+        }
+
+        .section p span {
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .section .simple {
+            color: #1968c3;
+            font-size: 0.7rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>Gatepass</h1>
+        <small>seamless plug and play authentication solution</small>
+    </div>
+
+    <div class="section">
+        <h1>APPLICATION ADMIN INVITE EMAIL</h1>
+        <p>
+            <span>{{name}}</span>, @{{orgName}} has invited you to be an administrator on
+            the <strong>{{appName}}</strong> application.
+        </p>
+        <p>
+            This invitation will expire in 7 days.
+        </p>
+        <p>
+            Click or copy the link below to accept this invitation
+        </p>
+        <p>{{invitationLink}}</p>
+
+        <p class="simple">
+            <strong>Note:</strong> This invitation was intended for {{userEmail}}. 
+            If you were not expecting this invitation, you can ignore this email.
+        </p>
+    </div>
+</body>
+
+</html>
