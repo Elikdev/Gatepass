@@ -4,6 +4,8 @@ const {
 	changeAppStatus,
 	viewAllUserApps,
 	updateApplication,
+	addAdminToApp,
+	acceptAppAdminInvite,
 	catchApp,
 } = require("../controllers/app.controllers");
 const {
@@ -11,6 +13,7 @@ const {
 	updateValidationRules,
 	viewAllUserAppsRules,
 	updateUserAppRules,
+	addAppAdminRules,
 	validateError,
 } = require("../middlewares/validation");
 
@@ -32,5 +35,12 @@ router.patch(
 	updateApplication
 );
 router.get("/appone", catchApp);
-
+router.post(
+	"/:appId/add-admin", 
+	addAppAdminRules(), 
+	validateError, 
+	checkAppId, 
+	addAdminToApp
+);
+router.patch("/invitation/accept", acceptAppAdminInvite);
 module.exports = router;

@@ -20,23 +20,21 @@ const userSignUpValidationRules = () => {
 		body("security_answer")
 			.notEmpty()
 			.withMessage("Security answer must have at least 8 characters"),
-		body("email").custom((value) => {
-			return User.findOne({ email: value }).then((user) => {
-				if (user) {
-					return Promise.reject(
-						"Email has already been registered on gatepass"
-					);
-				}
-			});
+		body("email").custom(async (value) => {
+			const user = await User.findOne({ email: value });
+			if (user) {
+				return Promise.reject(
+					"Email has already been registered on gatepass"
+				);
+			}
 		}),
-		body("organisation_name").custom((value) => {
-			return User.findOne({ organisation_name: value }).then((org) => {
-				if (org) {
-					return Promise.reject(
-						"You cannot register your organisation with that name. It has been taken, try a new name"
-					);
-				}
-			});
+		body("organisation_name").custom(async (value) => {
+			const org = await User.findOne({ organisation_name: value });
+			if (org) {
+				return Promise.reject(
+					"You cannot register your organisation with that name. It has been taken, try a new name"
+				);
+			}
 		}),
 	];
 };
@@ -95,14 +93,13 @@ const appRegisterValRules = () => {
 		body("unique_id")
 			.notEmpty()
 			.withMessage("Application's unique Id is required"),
-		body("app_name").custom((val) => {
-			return App.findOne({ app_name: val }).then((app) => {
-				if (app) {
-					return Promise.reject(
-						"App name has been taken. You need to change it"
-					);
-				}
-			});
+		body("app_name").custom(async (val) => {
+			const app = await App.findOne({ app_name: val });
+			if (app) {
+				return Promise.reject(
+					"App name has been taken. You need to change it"
+				);
+			}
 		}),
 	];
 };
@@ -147,6 +144,15 @@ const updateUserAppRules = () => {
 	]
 };
 
+const addAppAdminRules = () => {
+	return [
+		body("email")
+			.notEmpty()
+			.isEmail()
+			.withMessage("Enter a valid email"),
+	]
+};
+
 const validateError = (req, res, next) => {
 	const errors = validationResult(req);
 	if (errors.isEmpty()) {
@@ -169,5 +175,6 @@ module.exports = {
 	updateValidationRules,
 	viewAllUserAppsRules,
 	updateUserAppRules,
+	addAppAdminRules,
 	validateError,
 };

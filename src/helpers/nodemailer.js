@@ -101,8 +101,59 @@ const passwordResetEmail = async (data, req) => {
 	return;
 };
 
+const sendAppAdminInvite = async (userData, ownerData, appData, req) => {
+	const userEmail = userData.email;
+	const userName = userData.fullname;
+	const invitationToken = jwt.sign({ userId: userData._id, appId: appData._id }, EMAIL_SECRET, {
+		expiresIn: "7d",
+	});
+
+	const invitationLink = `http:\/\/${req.headers.host}\/api\/v1\/apps\/invitation\/accept?token=${invitationToken}`;
+
+	const msg = {
+		from: EMAIL_ADDRESS,
+		to: userEmail,
+		subject: "Invitation to be an application admin on gatepass",
+		text: "testing text",
+		template: "adminInviteMail",
+		context: {
+			name: userName,
+			invitationLink,
+			userEmail,
+			orgName: ownerData.organisation_name,
+			appName: appData.app_name,
+		},
+	};
+
+	let info = await transport.sendMail(msg);
+	console.log(blue(`mail sent succcessfully >>> ${info.messageId}`));
+	return;
+};
+
+const sendInviteNotification = async (data, user, application) => {
+	const userEmail = data.email;
+	const msg = {
+		from: EMAIL_ADDRESS,
+		to: userEmail,
+		subject: "Admin Invite Acceptance",
+		text: "testing text",
+		template: "inviteAcceptance",
+		context: {
+			name: data.fullname,
+			userAdded: user.email,
+			appName: application,
+		},
+	};
+
+	let { messageId } = await transport.sendMail(msg);
+	console.log(blue(`mail sent succcessfully >>> ${messageId}`));
+	return;
+};
+
 module.exports = {
 	sendActivationEmail,
 	sendInvalidUserLoginAttempt,
 	passwordResetEmail,
+	sendAppAdminInvite,
+	sendInviteNotification,
 };

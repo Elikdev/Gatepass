@@ -1,7 +1,8 @@
-const { App, User } = require("../models/index");
 const jwt = require("jsonwebtoken");
-const { APP_SECRET } = require("../config/index");
 const { red } = require("chalk");
+const { App, User } = require("../models/index");
+const { APP_SECRET } = require("../config/index");
+const { sendAppAdminInvite, sendInviteNotification } = require("../helpers/nodemailer");
 
 exports.registerNewApp = async (req, res) => {
 	const { app_name, description, unique_id } = req.body;
@@ -205,6 +206,118 @@ exports.updateApplication = async (req, res) => {
 		});
 	} catch (error) {
 		console.log(red(`Error from updating application >>> ${error.message}`));
+		return res.status(500).json({
+			errors: {
+				message:
+					"Something went wrong, please try again or check back for a fix",
+			},
+		});
+	}
+};
+
+exports.addAdminToApp = async (req, res) => {
+	const { email } = req.body,
+	 	{ appId } = req.params,
+		{ _id } = req.user;
+	try {
+		// check if app is in the db
+		const app = await App.findById(appId);
+		if (!app) {
+			return res.status(404).json({
+				message: "App does not exist on Gatepass",
+			});
+		}
+
+		//check if the owner is the one adding admin to the application
+		const owner = await User.findOne({ _id: _id });
+		if (!owner.apps.includes(app._id)) {
+			return res.status(401).json({
+				message:
+					"You do not have write access to add an administrator to this application",
+			});
+		}
+		
+		// for now the logic is that the user to be added is signed up on Gatepass already
+		const newAdmin = await User.findOne({ email });
+		if (!newAdmin) {
+			return res.status(404).json({
+				message: `User with the email ${email} is not registered on Gatepass`,
+			});
+		}
+
+		// check if the new admin to be added is already an admin on the app
+		const userAlreadyAdded = app.app_admins.includes(newAdmin._id);
+		if (userAlreadyAdded) {
+			return res.status(409).json({
+				message: "User already added as an admin to the application",
+			});
+		}
+
+		//  send invitation link with token
+		await sendAppAdminInvite(newAdmin, owner, app, req);
+		return res.status(200).json({
+			message:
+				"An invitation mail has been sent to the user's address.",
+		});
+	} catch (error) {
+		console.log(red(`Error in adding an admin to an application >>> ${error.message}`));
+		return res.status(500).json({
+			errors: {
+				message:
+					"Something went wrong, please try again or check back for a fix",
+			},
+		});
+	}
+
+};
+
+exports.acceptAppAdminInvite = async (req, res) => {
+	const { token } = req.query;
+
+	try {
+		const { userId, appId } = jwt.verify(token, EMAIL_SECRET);
+
+		const user = await User.findById(userId);
+
+		if (!user) {
+			return res.status(401).json({
+				message: "Invalid registration link!",
+			});
+		}
+
+		const app = await App.findById(appId); 
+
+		if (!app) {
+			return res.status(401).json({
+				message: "Invalid registration link!",
+			});
+		}
+
+		const userAlreadyAnAdmin = app.app_admins.includes(userId);
+		if (userAlreadyAnAdmin) {
+			return res.status(409).json({
+				message: "You already accepted to be an admin on the application",
+			});
+		}
+
+		app.app_admins.push(userId);
+		await app.save();
+
+		//  you can comment out this if it's not necessary when testing
+		for (const appAdmin of app.app_admins) {
+			const eachAdmin = await User.findById(appAdmin);
+			// send mail to all the application admins that sososo user has been added as an admin
+			await sendInviteNotification(eachAdmin, user, app.app_name);
+			console.log('====sent====');
+		}
+
+		return res.status(200).json({
+			message:
+				"Invitation accepted successfully.",
+		});
+
+	} catch (error) {
+		console.log(red(`Error from user accepting admin invitation to an app >>> ${error.message}`));
 		return res.status(500).json({
 			errors: {
 				message:

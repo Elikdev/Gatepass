@@ -10,7 +10,7 @@ module.exports = (req, res, next) => {
     } else {
         return res.status(422).json({
             errors: {
-                message: "Invalid MongoDb Id entered!!",
+                message: "Invalid Application ID entered!!",
             },
         });
     }
