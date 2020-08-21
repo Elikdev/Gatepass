@@ -51,6 +51,11 @@ const registerByInviteValidationRules = () => {
 		body("security_answer")
 			.notEmpty()
 			.withMessage("Security answer must have at least 8 characters"),
+		check("t")
+			.notEmpty()
+			.withMessage(
+				"You do not have the required information to access this route"
+			),
 	];
 };
 
