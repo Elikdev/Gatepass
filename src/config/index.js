@@ -9,4 +9,5 @@ module.exports = {
 	JWT_SECRET_KEY: process.env.JWT_SECRET_KEY,
 	GEOLOCSECRET: process.env.IPGEOLOCATIONAPITOKEN,
 	APP_SECRET: process.env.APP_SECRET,
+	INVITE_SECRET: process.env.INVITE_SECRET,
 };

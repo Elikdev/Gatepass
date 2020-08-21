@@ -6,9 +6,11 @@ const {
 	forgotPassword,
 	changePassword,
 	resetPassword,
+	registerByInvite,
 } = require("../controllers/auth.controllers");
 const {
 	userSignUpValidationRules,
+	registerByInviteValidationRules,
 	userSignInValidationRules,
 	resetPasswordValRules,
 	changePasswordValRules,
@@ -20,6 +22,12 @@ authRouter.post(
 	userSignUpValidationRules(),
 	validateError,
 	userSignUp
+);
+authRouter.post(
+	"/register-by-invite",
+	registerByInviteValidationRules(),
+	validateError,
+	registerByInvite
 );
 authRouter.patch("/verify", accountVerification);
 authRouter.post(
@@ -37,9 +45,9 @@ authRouter.patch(
 );
 
 authRouter.post(
-	"/change-password", 
-	changePasswordValRules(), 
-	validateError, 
+	"/change-password",
+	changePasswordValRules(),
+	validateError,
 	changePassword
 );
 

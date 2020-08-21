@@ -104,11 +104,19 @@ const passwordResetEmail = async (data, req) => {
 const sendAppAdminInvite = async (userData, ownerData, appData, req) => {
 	const userEmail = userData.email;
 	const userName = userData.fullname;
-	const invitationToken = jwt.sign({ userId: userData._id, appId: appData._id }, EMAIL_SECRET, {
-		expiresIn: "7d",
-	});
+	const invitationToken = jwt.sign(
+		{
+			userId: userData._id,
+			appId: appData._id,
+			orgName: ownerData.organisation.name,
+		},
+		EMAIL_SECRET,
+		{
+			expiresIn: "7d",
+		}
+	);
 
-	const invitationLink = `http:\/\/${req.headers.host}\/api\/v1\/apps\/invitation\/accept?token=${invitationToken}`;
+	const invitationLink = `http:\/\/${req.headers.host}\/api\/v1\/apps\/invitation\/accept?e=${userEmail}&token=${invitationToken}`;
 
 	const msg = {
 		from: EMAIL_ADDRESS,
@@ -120,7 +128,7 @@ const sendAppAdminInvite = async (userData, ownerData, appData, req) => {
 			name: userName,
 			invitationLink,
 			userEmail,
-			orgName: ownerData.organisation_name,
+			orgName: ownerData.organisation.name,
 			appName: appData.app_name,
 		},
 	};

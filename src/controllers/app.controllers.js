@@ -1,8 +1,11 @@
 const jwt = require("jsonwebtoken");
 const { red } = require("chalk");
-const { App, User } = require("../models/index");
-const { APP_SECRET } = require("../config/index");
-const { sendAppAdminInvite, sendInviteNotification } = require("../helpers/nodemailer");
+const { App, User, Organisation } = require("../models/index");
+const { APP_SECRET, EMAIL_SECRET, INVITE_SECRET } = require("../config/index");
+const {
+	sendAppAdminInvite,
+	sendInviteNotification,
+} = require("../helpers/nodemailer");
 
 exports.registerNewApp = async (req, res) => {
 	const { app_name, description, unique_id } = req.body;
@@ -217,7 +220,7 @@ exports.updateApplication = async (req, res) => {
 
 exports.addAdminToApp = async (req, res) => {
 	const { email } = req.body,
-	 	{ appId } = req.params,
+		{ appId } = req.params,
 		{ _id } = req.user;
 	try {
 		// check if app is in the db
@@ -229,20 +232,23 @@ exports.addAdminToApp = async (req, res) => {
 		}
 
 		//check if the owner is the one adding admin to the application
-		const owner = await User.findOne({ _id: _id });
+		const owner = await User.findOne({ _id: _id, role: "OWNER" }).populate(
+			"organisation",
+			"name"
+		);
 		if (!owner.apps.includes(app._id)) {
 			return res.status(401).json({
 				message:
 					"You do not have write access to add an administrator to this application",
 			});
 		}
-		
-		// for now the logic is that the user to be added is signed up on Gatepass already
-		const newAdmin = await User.findOne({ email });
+
+		// check if invitee exists in db
+		let newAdmin = await User.findOne({ email });
 		if (!newAdmin) {
-			return res.status(404).json({
-				message: `User with the email ${email} is not registered on Gatepass`,
-			});
+			newAdmin = {
+				email: email, // a new object is created for invitee so that the mail is sent regardlessly
+			};
 		}
 
 		// check if the new admin to be added is already an admin on the app
@@ -256,11 +262,12 @@ exports.addAdminToApp = async (req, res) => {
 		//  send invitation link with token
 		await sendAppAdminInvite(newAdmin, owner, app, req);
 		return res.status(200).json({
-			message:
-				"An invitation mail has been sent to the user's address.",
+			message: "An invitation mail has been sent to the invitee's address.",
 		});
 	} catch (error) {
-		console.log(red(`Error in adding an admin to an application >>> ${error.message}`));
+		console.log(
+			red(`Error in adding an admin to an application >>> ${error.message}`)
+		);
 		return res.status(500).json({
 			errors: {
 				message:
@@ -268,24 +275,33 @@ exports.addAdminToApp = async (req, res) => {
 			},
 		});
 	}
-
 };
 
 exports.acceptAppAdminInvite = async (req, res) => {
-	const { token } = req.query;
+	const { token, e } = req.query;
 
 	try {
-		const { userId, appId } = jwt.verify(token, EMAIL_SECRET);
+		const { userId, appId, orgName } = jwt.verify(token, EMAIL_SECRET);
 
-		const user = await User.findById(userId);
+		const user = await User.findOne({ _id: userId });
+
+		const inviteToken = jwt.sign(
+			{ email: e, appId: appId, orgName: orgName },
+			INVITE_SECRET,
+			{
+				expiresIn: "1hr",
+			}
+		);
 
 		if (!user) {
 			return res.status(401).json({
-				message: "Invalid registration link!",
+				message:
+					"You do not have an account on gatepass. So you need to register with this link",
+				link: `http:\/\/${req.headers.host}\/api\/v1\/auth\/register-by-invitation?t=${inviteToken}`,
 			});
 		}
 
-		const app = await App.findById(appId); 
+		const app = await App.findById(appId);
 
 		if (!app) {
 			return res.status(401).json({
@@ -308,16 +324,18 @@ exports.acceptAppAdminInvite = async (req, res) => {
 			const eachAdmin = await User.findById(appAdmin);
 			// send mail to all the application admins that sososo user has been added as an admin
 			await sendInviteNotification(eachAdmin, user, app.app_name);
-			console.log('====sent====');
+			console.log("====sent====");
 		}
 
 		return res.status(200).json({
-			message:
-				"Invitation accepted successfully.",
+			message: "Invitation accepted successfully.",
 		});
-
 	} catch (error) {
-		console.log(red(`Error from user accepting admin invitation to an app >>> ${error.message}`));
+		console.log(
+			red(
+				`Error from user accepting admin invitation to an app >>> ${error.stack}`
+			)
+		);
 		return res.status(500).json({
 			errors: {
 				message:
