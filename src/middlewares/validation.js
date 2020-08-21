@@ -1,5 +1,5 @@
 const { check, body, validationResult } = require("express-validator");
-const { User, App } = require("../models/");
+const { User, App, Organisation } = require("../models/");
 
 const userSignUpValidationRules = () => {
 	return [
@@ -23,19 +23,39 @@ const userSignUpValidationRules = () => {
 		body("email").custom(async (value) => {
 			const user = await User.findOne({ email: value });
 			if (user) {
-				return Promise.reject(
-					"Email has already been registered on gatepass"
-				);
+				return Promise.reject("Email has already been registered on gatepass");
 			}
 		}),
 		body("organisation_name").custom(async (value) => {
-			const org = await User.findOne({ organisation_name: value });
+			const org = await Organisation.findOne({ organisation_name: value });
 			if (org) {
 				return Promise.reject(
 					"You cannot register your organisation with that name. It has been taken, try a new name"
 				);
 			}
 		}),
+	];
+};
+
+const registerByInviteValidationRules = () => {
+	return [
+		body("fullname").notEmpty().withMessage("Fullname field cannot be empty"),
+		body("password")
+			.notEmpty()
+			.isLength({ min: 6 })
+			.withMessage("Password must be at least 6 characters long"),
+		body("security_question")
+			.notEmpty()
+			.isLength({ min: 8 })
+			.withMessage("Security question must have at least 8 characters"),
+		body("security_answer")
+			.notEmpty()
+			.withMessage("Security answer must have at least 8 characters"),
+		check("t")
+			.notEmpty()
+			.withMessage(
+				"You do not have the required information to access this route"
+			),
 	];
 };
 
@@ -96,9 +116,7 @@ const appRegisterValRules = () => {
 		body("app_name").custom(async (val) => {
 			const app = await App.findOne({ app_name: val });
 			if (app) {
-				return Promise.reject(
-					"App name has been taken. You need to change it"
-				);
+				return Promise.reject("App name has been taken. You need to change it");
 			}
 		}),
 	];
@@ -130,8 +148,7 @@ const viewAllUserAppsRules = () => {
 
 const updateUserAppRules = () => {
 	return [
-		body("app_name")
-			.optional(),
+		body("app_name").optional(),
 		body("description")
 			.optional()
 			.isLength({ min: 10 })
@@ -141,16 +158,13 @@ const updateUserAppRules = () => {
 		body("app_token")
 			.isEmpty()
 			.withMessage("You have no write access to update the app token"),
-	]
+	];
 };
 
 const addAppAdminRules = () => {
 	return [
-		body("email")
-			.notEmpty()
-			.isEmail()
-			.withMessage("Enter a valid email"),
-	]
+		body("email").notEmpty().isEmail().withMessage("Enter a valid email"),
+	];
 };
 
 const validateError = (req, res, next) => {
@@ -168,6 +182,7 @@ const validateError = (req, res, next) => {
 
 module.exports = {
 	userSignUpValidationRules,
+	registerByInviteValidationRules,
 	userSignInValidationRules,
 	resetPasswordValRules,
 	changePasswordValRules,

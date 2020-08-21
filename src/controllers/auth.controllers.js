@@ -1,5 +1,5 @@
 const bcrypt = require("bcryptjs");
-const { User } = require("../models/");
+const { User, Organisation, App } = require("../models/");
 const { red } = require("chalk");
 const {
 	sendActivationEmail,
@@ -7,7 +7,7 @@ const {
 	passwordResetEmail,
 } = require("../helpers/nodemailer");
 const authHelper = require("../helpers/auth");
-const { EMAIL_SECRET, GEOLOCSECRET } = require("../config");
+const { EMAIL_SECRET, GEOLOCSECRET, INVITE_SECRET } = require("../config");
 const jwt = require("jsonwebtoken");
 const IPGeolocationAPI = require("ip-geolocation-api-javascript-sdk");
 
@@ -26,39 +26,160 @@ exports.userSignUp = async (req, res) => {
 
 		const user = new User({
 			fullname,
-			organisation_name,
+			email,
+			password: hashedPassword,
+			security_question,
+			security_answer,
+		});
+		const organisation = new Organisation({
+			name: organisation_name,
+		});
+
+		user.organisation = organisation._id;
+		organisation.users.push(user._id);
+		const ipgeolocationApi = new IPGeolocationAPI(GEOLOCSECRET, false);
+
+		async function handleResponse(json) {
+			try {
+				if (json.message == "Internet is not connected!") {
+					return res.status(412).json({
+						message: "Oopps! No internet connection. Try again ",
+					});
+				}
+
+				const location = `${json.city}, ${json.country_name}`;
+				console.log("location is", location);
+				user.locations.push(location);
+
+				await sendActivationEmail(user, req);
+
+				await user.save();
+				await organisation.save();
+
+				return res.status(201).json({
+					message:
+						"Your have successfully created a new account with gatepass. Check your email, an activation mail has been sent to you.",
+				});
+			} catch (err) {
+				console.log(
+					`Error from Ipgeolocationapi response handler >>> ${err.messsage} `
+				);
+				return res.status(500).json({
+					errors: {
+						message:
+							"Something went wrong, please try again or check back for a fix",
+					},
+				});
+			}
+		}
+
+		await ipgeolocationApi.getGeolocation(handleResponse);
+	} catch (error) {
+		console.log(red(`Error from user sign up >>> ${error.message} `));
+		return res.status(500).json({
+			errors: {
+				message:
+					"Something went wrong, please try again or check back for a fix",
+			},
+		});
+	}
+};
+
+exports.registerByInvite = async (req, res) => {
+	const { t } = req.query;
+	const { fullname, password, security_question, security_answer } = req.body;
+
+	try {
+		const { email, orgName, appId } = jwt.verify(t, INVITE_SECRET); //decode the incoming token
+
+		const hashedPassword = authHelper.hashPassword(password);
+
+		//check if user already exists
+		const existingUser = await User.findOne({ email });
+
+		if (existingUser) {
+			return res.status(409).json({
+				message:
+					"An account has initially been created with your email on gatepass",
+			});
+		}
+
+		const user = new User({
+			fullname,
 			email,
 			password: hashedPassword,
 			security_question,
 			security_answer,
 		});
 
-		const ipgeolocationApi = new IPGeolocationAPI(GEOLOCSECRET, false);
+		//update the organisation with the user's id
+		const organisation = await Organisation.findOneAndUpdate(
+			{ name: orgName },
+			{ $push: { users: user._id } }
+		);
 
-		function handleResponse(json) {
-			if (json.message == "Internet is not connected!") {
-				return res.status(412).json({
-					message: "Oopps! No internet connection. Try again ",
-				});
-			}
-
-			const location = `${json.city}, ${json.country_name}`;
-			console.log("location is", location);
-			user.locations.push(location);
+		//invalid registration link
+		if (!organisation) {
+			return res.status(401).json({
+				message: "Invalid invitation link!",
+			});
 		}
 
-		ipgeolocationApi.getGeolocation(handleResponse);
+		//updating neccessary fields
+		user.apps.push(appId);
+		user.organisation = organisation._id;
+		user.role = "ADMIN";
 
-		await sendActivationEmail(user, req);
+		const ipgeolocationApi = new IPGeolocationAPI(GEOLOCSECRET, false);
 
-		await user.save();
+		async function handleResponse(json) {
+			try {
+				if (json.message == "Internet is not connected!") {
+					return res.status(412).json({
+						message: "Oopps! No internet connection. Try again ",
+					});
+				}
 
-		return res.status(201).json({
-			message:
-				"Your have successfully created a new account with gatepass. Check your email, an activation mail has been sent to you.",
-		});
+				const location = `${json.city}, ${json.country_name}`;
+				console.log("location is", location);
+				user.locations.push(location);
+
+				await sendActivationEmail(user, req);
+
+				//add the invitee to the app_admins array
+				const updatedApp = await App.findOneAndUpdate(
+					{ _id: appId },
+					{ $push: { app_admins: user._id } }
+				);
+
+				//invalid invitation link
+				if (!updatedApp) {
+					return res.status(401).json({
+						message: "Invalid invitation link!",
+					});
+				}
+				await user.save();
+
+				return res.status(201).json({
+					message:
+						"Your have successfully created a new account with gatepass. Check your email, an activation mail has been sent to you. After activating your account, you will have access to the application",
+				});
+			} catch (err) {
+				console.log(
+					`Error from Ipgeolocationapi response handler >>> ${err.messsage} `
+				);
+				return res.status(500).json({
+					errors: {
+						message:
+							"Something went wrong, please try again or check back for a fix",
+					},
+				});
+			}
+		}
+
+		await ipgeolocationApi.getGeolocation(handleResponse);
 	} catch (error) {
-		console.log(red(`Error from user sign up >>> ${error.message} `));
+		console.log(red(`Error from user sign up by invite >>> ${error.message}`));
 		return res.status(500).json({
 			errors: {
 				message:
