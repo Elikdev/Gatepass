@@ -167,6 +167,15 @@ const addAppAdminRules = () => {
 	];
 };
 
+const viewAppUsersRules = (req, res, next) => {
+	return [
+		check("filter")
+			.optional()
+			.isIn(["axtive", "disabled"])
+			.withMessage("Invalid filter value"),
+	];
+};
+
 const validateError = (req, res, next) => {
 	const errors = validationResult(req);
 	if (errors.isEmpty()) {
@@ -191,5 +200,6 @@ module.exports = {
 	viewAllUserAppsRules,
 	updateUserAppRules,
 	addAppAdminRules,
+	viewAppUsersRules,
 	validateError,
 };

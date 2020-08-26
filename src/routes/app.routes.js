@@ -16,6 +16,7 @@ const {
 	addAppAdminRules,
 	validateError,
 } = require("../middlewares/validation");
+const { checkAppToken } = require("../middlewares/checkAuth");
 
 const checkAppId = require("../middlewares/validateMongooseId");
 
@@ -34,12 +35,12 @@ router.patch(
 	validateError,
 	updateApplication
 );
-router.get("/appone", catchApp);
+router.get("/auth", checkAppToken, catchApp);
 router.post(
-	"/:appId/add-admin", 
-	addAppAdminRules(), 
-	validateError, 
-	checkAppId, 
+	"/:appId/add-admin",
+	addAppAdminRules(),
+	validateError,
+	checkAppId,
 	addAdminToApp
 );
 router.patch("/invitation/accept", acceptAppAdminInvite);

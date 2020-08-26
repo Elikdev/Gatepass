@@ -15,16 +15,20 @@ const unsecureRoutes = [
 	"/api/v1/auth/reset-password",
 	"/api/v1/auth/verify",
 	"/api/v1/auth/forgot-password",
-	"/api/v1/apps/appone",
+	"/api/v1/apps/auth",
 	"/api/v1/apps/invitation/accept",
+	"/api/v1/services/auth",
 ];
 
 const authServiceRoutes = ["/api/v1/apps/appone"];
 
-const authRoutes = ["api/v1/apps/:orgname/users"];
+const serviceRoutes = [
+	"/api/v1/services/auth",
+	"/api/v1/services/:appName/users",
+];
 module.exports = {
 	secureRoutes,
 	unsecureRoutes,
 	authServiceRoutes,
-	authRoutes,
+	serviceRoutes,
 };

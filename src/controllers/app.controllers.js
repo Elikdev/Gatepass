@@ -18,9 +18,17 @@ exports.registerNewApp = async (req, res) => {
 			unique_id,
 		});
 
-		const app_token = jwt.sign({ app_name, unique_id }, APP_SECRET, {
-			expiresIn: "1y",
-		});
+		const app_token = jwt.sign(
+			{
+				app_name: app_name,
+				unique_id: unique_id,
+				org_name: user.organisation.name,
+			},
+			APP_SECRET,
+			{
+				expiresIn: "1y",
+			}
+		);
 
 		app.app_token = app_token;
 		app.app_admins.push(user._id);
@@ -126,6 +134,7 @@ exports.viewAllUserApps = async (req, res) => {
 	const { _id } = req.user;
 	try {
 		let apps;
+		let count;
 		if (filter) {
 			if (filter.toString() == "active") {
 				apps = await App.find({
@@ -135,6 +144,7 @@ exports.viewAllUserApps = async (req, res) => {
 					.limit(limit * 1)
 					.skip((page - 1) * limit)
 					.exec();
+				count = await App.countDocuments({ app_admins: _id, status: "active" });
 			} else if (filter.toString() == "disabled") {
 				apps = await App.find({
 					app_admins: _id,
@@ -143,6 +153,10 @@ exports.viewAllUserApps = async (req, res) => {
 					.limit(limit * 1)
 					.skip((page - 1) * limit)
 					.exec();
+				count = await App.countDocuments({
+					app_admins: _id,
+					status: "disabled",
+				});
 			}
 		} else {
 			apps = await App.find({
@@ -151,8 +165,8 @@ exports.viewAllUserApps = async (req, res) => {
 				.limit(limit * 1)
 				.skip((page - 1) * limit)
 				.exec();
+			count = await App.countDocuments({ app_admins: _id });
 		}
-		const count = apps.length;
 
 		if (count === 0) {
 			return res.status(404).json({

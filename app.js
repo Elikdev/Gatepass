@@ -4,9 +4,13 @@ const bodyParser = require("body-parser");
 const morgan = require("morgan");
 const cors = require("cors");
 const dbConnect = require("./src/config/db");
-const { checkAuth, checkAppToken } = require("./src/middlewares/checkAuth");
+const {
+	checkAuth,
+	checkAppToken,
+	checkAuthServiceToken,
+} = require("./src/middlewares/checkAuth");
 
-const { authRouter, appRouter } = require("./src/routes/");
+const { authRouter, appRouter, serviceRouter } = require("./src/routes/");
 
 const isProduction = process.env.NODE_ENV === "production";
 dbConnect();
@@ -27,11 +31,10 @@ app.get("/", (req, res) => {
 
 // use auth middleware
 app.use(checkAuth);
-app.use(checkAppToken);
-
 app.use("/api/v1/auth", authRouter);
 
 app.use("/api/v1/apps", appRouter);
+app.use("/api/v1/services", checkAuthServiceToken, serviceRouter);
 
 // catch 404 and forward to error handler
 app.use((req, res, next) => {

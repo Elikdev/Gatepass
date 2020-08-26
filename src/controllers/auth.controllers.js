@@ -61,9 +61,7 @@ exports.userSignUp = async (req, res) => {
 						"Your have successfully created a new account with gatepass. Check your email, an activation mail has been sent to you.",
 				});
 			} catch (err) {
-				console.log(
-					`Error from Ipgeolocationapi response handler >>> ${err.messsage} `
-				);
+				console.log(`Error from Ipgeolocationapi response handler >>> ${err} `);
 				return res.status(500).json({
 					errors: {
 						message:
@@ -165,9 +163,7 @@ exports.registerByInvite = async (req, res) => {
 						"Your have successfully created a new account with gatepass. Check your email, an activation mail has been sent to you. After activating your account, you will have access to the application",
 				});
 			} catch (err) {
-				console.log(
-					`Error from Ipgeolocationapi response handler >>> ${err.messsage} `
-				);
+				console.log(`Error from Ipgeolocationapi response handler >>> ${err} `);
 				return res.status(500).json({
 					errors: {
 						message:
@@ -239,7 +235,10 @@ exports.userSignIn = async (req, res) => {
 	const ipgeolocationApi = new IPGeolocationAPI(GEOLOCSECRET, false);
 
 	try {
-		const user = await User.findOne({ email });
+		const user = await User.findOne({ email }).populate(
+			"organisation apps",
+			"name app_name"
+		);
 		if (!user) {
 			return res.status(404).json({
 				message: "You Entered an incorrect Email or Password",
@@ -312,7 +311,7 @@ exports.userSignIn = async (req, res) => {
 				const token = authHelper.createJwtToken({ userId: user._id }, "1d");
 				const authServiceToken = authHelper.createJwtToken(
 					{
-						org_name: user.organization_name,
+						org_name: user.organisation.name,
 					},
 					"1d"
 				);
