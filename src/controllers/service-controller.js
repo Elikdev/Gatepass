@@ -15,6 +15,13 @@ exports.catchToken = async (req, res) => {
 		});
 	} catch (error) {
 		console.log(`Error from catching token >>> ${error.message}`);
+
+		if (error.response) {
+			return res.status(error.response.status).json({
+				error: error.response.data,
+			});
+		}
+
 		return res.status(500).json({
 			message: "An error occured. Try again later",
 		});
@@ -54,12 +61,100 @@ exports.getUsers = async (req, res) => {
 		}
 	} catch (error) {
 		console.log(`Error from getting users of application >>> ${error.message}`);
-		if (error.message == "Request failed with status code 404") {
-			return res.status(404).json({
-				message: "Users not found",
+		if (error.response) {
+			return res.status(error.response.status).json({
+				error: error.response.data,
 			});
 		}
 
+		return res.status(500).json({
+			message: "An error occured. Try again later",
+		});
+	}
+};
+
+exports.getSingleUser = async (req, res) => {
+	const { appName, email } = req.params;
+	const organisation = req.user.organisation.name;
+
+	try {
+		const options = {
+			headers: {
+				"Content-Type": "application/json",
+				"gatepass-token": `Bearer ${
+					req.headers["auth-service-token"].split(" ")[1]
+				}`,
+			},
+		};
+		const response = await axios.get(
+			`http://localhost:5001/api/v1/${organisation}/${appName}/${email}`,
+			options
+		);
+
+		if (!response) {
+			return res.status(404).json({
+				message: "User not found",
+			});
+		} else {
+			return res.status(response.status).json({
+				data: response.data,
+			});
+		}
+	} catch (error) {
+		console.log(
+			`Error from getting the user's details on the application >>> ${error.message}`
+		);
+		if (error.response) {
+			return res.status(error.response.status).json({
+				error: error.response.data,
+			});
+		}
+
+		return res.status(500).json({
+			message: "An error occured. Try again later",
+		});
+	}
+};
+
+exports.changeUserStatus = async (req, res) => {
+	const { appName, id } = req.params;
+	const { status_to } = req.query;
+	const organisation = req.user.organisation.name;
+
+	try {
+		const options = {
+			method: "patch",
+			headers: {
+				"Content-Type": "application/json",
+				"gatepass-token": `Bearer ${
+					req.headers["auth-service-token"].split(" ")[1]
+				}`,
+			},
+		};
+
+		const response = await axios.request(
+			`http://localhost:5001/api/v1/${organisation}/${appName}/change/${id}?status_to=${status_to}`,
+			options
+		);
+
+		if (!response) {
+			return res.status(409).json({
+				message: "Change the status_to field",
+			});
+		} else {
+			return res.status(response.status).json({
+				message: response.data,
+			});
+		}
+	} catch (error) {
+		console.log(
+			`Error in changing the status of the user under the application >>> ${error.message}`
+		);
+		if (error.response) {
+			return res.status(error.response.status).json({
+				error: error.response.data,
+			});
+		}
 		return res.status(500).json({
 			message: "An error occured. Try again later",
 		});
