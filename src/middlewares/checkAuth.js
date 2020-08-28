@@ -1,5 +1,5 @@
 const routes = require("../constants/routesGroup");
-const { User, App } = require("../models");
+const { User, Organisation } = require("../models");
 const authHelper = require("../helpers/auth");
 
 // middleware to authenticate users accessing secure routes
@@ -23,7 +23,10 @@ const checkAuth = async (req, res, next) => {
 
 		try {
 			const decoded = authHelper.verifyJwtToken(token);
-			const user = await User.findById(decoded.userId);
+			const user = await User.findById(decoded.userId).populate(
+				"organisation apps",
+				"name app_name"
+			);
 			if (!user) {
 				return res.status(401).json({
 					message: "You are not authorized to access this route.",
@@ -46,96 +49,74 @@ const checkAuth = async (req, res, next) => {
 	}
 };
 
-//handle all requests from auth-service
+//middleware that decodes the token assigned to an application using auth-service -- gatepass --> auth-service(applications) communication
 const checkAppToken = async (req, res, next) => {
-	if (
-		routes.authServiceRoutes.includes(req.path) &&
-		!routes.secureRoutes.includes(req.path)
-	) {
-		if (!req.headers["app-token"]) {
-			return res.status(412).json({
-				message: "Access denied!! Missing authorization credentials",
+	if (!req.headers["app-token"]) {
+		return res.status(412).json({
+			message: "Access denied!! Missing authorization credentials",
+		});
+	}
+	let appToken = req.headers["app-token"];
+
+	if (appToken.startsWith("Bearer ")) {
+		appToken = appToken.split(" ")[1];
+	}
+
+	try {
+		const decoded = authHelper.verifyAppToken(appToken);
+
+		if (!decoded) {
+			return res.status(401).json({
+				message: "You are using an invalid token",
 			});
 		}
-		const appToken = req.headers["app-token"];
-		let decodedToken;
-
-		separateBearer = appToken.split(" ");
-		if (separateBearer.includes("Bearer")) {
-			decodedToken = separateBearer[1];
-		} else {
-			decodedToken = appToken;
-		}
-
-		try {
-			const decoded = authHelper.verifyAppToken(decodedToken);
-
-			if (!decoded) {
-				return res.status(404).json({
-					nessage: "You are using an invalid token",
-				});
-			}
-			req.app = decoded;
-			return next();
-		} catch (error) {
-			console.log("Error from user authentication >>>>> ", error);
-			if (error.name === "TokenExpiredError") {
-				return res.status(401).json({
-					error: true,
-					message: "Token expired.",
-				});
-			}
-			return next(error);
-		}
-	} else {
+		req.app = decoded;
 		return next();
+	} catch (error) {
+		console.log("Error from user authentication >>>>> ", error);
+		if (error.name === "TokenExpiredError") {
+			return res.status(401).json({
+				error: true,
+				message: "Token expired.",
+			});
+		}
+		return next(error);
 	}
 };
 
-//middleware to handle all requests going to auth-service
-const checkAuthServiceToken = (req, res, next) => {
-	if (
-		routes.authRoutes.includes(req.path) &&
-		!routes.secureRoutes.includes(req.path)
-	) {
-		if (!req.headers["auth-service-token"]) {
-			return res.status(412).json({
-				message: "Access denied. Missing authorization credentials",
+//middleware that decodes the token generated for auth-service -- gatepass --> auth-service communication
+const checkAuthServiceToken = async (req, res, next) => {
+	if (!req.headers["auth-service-token"]) {
+		return res.status(412).json({
+			message: "Access denied. Missing authorization credentials",
+		});
+	}
+
+	let authServiceToken = req.headers["auth-service-token"];
+	if (authServiceToken.startsWith("Bearer ")) {
+		authServiceToken = authServiceToken.split(" ")[1];
+	}
+
+	try {
+		const decoded = authHelper.verifyJwtToken(authServiceToken);
+		const organisation = await Organisation.findOne({ name: decoded.org_name });
+
+		if (!organisation) {
+			return res.status(401).json({
+				message: "You are not authorized to access this route",
 			});
 		}
-
-		const authServiceToken = req.headers["auth-service-token"];
-
-		let decodedToken;
-
-		separateBearer = authServiceToken.split(" ");
-		if (separateBearer.includes("Bearer")) {
-			decodedToken = separateBearer[1];
-		} else {
-			decodedToken = authServiceToken;
-		}
-		try {
-			const decoded = authHelper.verifyJwtToken(decodedToken);
-
-			if (!decoded) {
-				return res.status(404).json({
-					nessage: "You are using an invalid token",
-				});
-			}
-			req.org_name = decoded;
-			return next();
-		} catch (error) {
-			console.log("Error from user authentication >>>>> ", error.message);
-			if (error.name === "TokenExpiredError") {
-				return res.status(401).json({
-					error: true,
-					message: "Token expired.",
-				});
-			}
-			return next(error);
-		}
-	} else {
+		req.org_name = organisation.name;
 		return next();
+	} catch (error) {
+		console.log("Error from user authentication >>>>> ", error.message);
+		if (error.name === "TokenExpiredError") {
+			return res.status(401).json({
+				error: true,
+				message: "Token expired.",
+			});
+		}
+		return next(error);
 	}
 };
 
