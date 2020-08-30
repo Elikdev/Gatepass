@@ -6,7 +6,7 @@ const comparePassword = (password, hashedPassword) => {
 	return bcrypt.compareSync(password, hashedPassword);
 };
 
-const hashPassword = (password) => {
+const hashPassword = password => {
 	return bcrypt.hashSync(password, 10);
 };
 
@@ -16,10 +16,10 @@ const createJwtToken = (payload, expIn) => {
 	});
 };
 
-const verifyJwtToken = (token) => {
+const verifyJwtToken = token => {
 	return jwt.verify(token, config.JWT_SECRET_KEY);
 };
-const verifyAppToken = (token) => {
+const verifyAppToken = token => {
 	return jwt.verify(token, config.APP_SECRET);
 };
 

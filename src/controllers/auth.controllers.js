@@ -23,7 +23,6 @@ exports.userSignUp = async (req, res) => {
 
 	try {
 		const hashedPassword = authHelper.hashPassword(password);
-
 		const user = new User({
 			fullname,
 			email,
@@ -34,11 +33,9 @@ exports.userSignUp = async (req, res) => {
 		const organisation = new Organisation({
 			name: organisation_name,
 		});
-
 		user.organisation = organisation._id;
 		organisation.users.push(user._id);
 		const ipgeolocationApi = new IPGeolocationAPI(GEOLOCSECRET, false);
-
 		async function handleResponse(json) {
 			try {
 				if (json.message == "Internet is not connected!") {
@@ -46,16 +43,12 @@ exports.userSignUp = async (req, res) => {
 						message: "Oopps! No internet connection. Try again ",
 					});
 				}
-
 				const location = `${json.city}, ${json.country_name}`;
 				console.log("location is", location);
 				user.locations.push(location);
-
 				await sendActivationEmail(user, req);
-
 				await user.save();
 				await organisation.save();
-
 				return res.status(201).json({
 					message:
 						"Your have successfully created a new account with gatepass. Check your email, an activation mail has been sent to you.",
@@ -70,8 +63,7 @@ exports.userSignUp = async (req, res) => {
 				});
 			}
 		}
-
-		await ipgeolocationApi.getGeolocation(handleResponse);
+		ipgeolocationApi.getGeolocation(handleResponse);
 	} catch (error) {
 		console.log(red(`Error from user sign up >>> ${error.message} `));
 		return res.status(500).json({
@@ -89,19 +81,14 @@ exports.registerByInvite = async (req, res) => {
 
 	try {
 		const { email, orgName, appId } = jwt.verify(t, INVITE_SECRET); //decode the incoming token
-
 		const hashedPassword = authHelper.hashPassword(password);
-
-		//check if user already exists
 		const existingUser = await User.findOne({ email });
-
 		if (existingUser) {
 			return res.status(409).json({
 				message:
 					"An account has initially been created with your email on gatepass",
 			});
 		}
-
 		const user = new User({
 			fullname,
 			email,
@@ -109,27 +96,20 @@ exports.registerByInvite = async (req, res) => {
 			security_question,
 			security_answer,
 		});
-
-		//update the organisation with the user's id
 		const organisation = await Organisation.findOneAndUpdate(
 			{ name: orgName },
 			{ $push: { users: user._id } }
 		);
-
-		//invalid registration link
 		if (!organisation) {
 			return res.status(401).json({
 				message: "Invalid invitation link!",
 			});
 		}
-
-		//updating neccessary fields
 		user.apps.push(appId);
 		user.organisation = organisation._id;
 		user.role = "ADMIN";
 
 		const ipgeolocationApi = new IPGeolocationAPI(GEOLOCSECRET, false);
-
 		async function handleResponse(json) {
 			try {
 				if (json.message == "Internet is not connected!") {
@@ -157,7 +137,6 @@ exports.registerByInvite = async (req, res) => {
 					});
 				}
 				await user.save();
-
 				return res.status(201).json({
 					message:
 						"Your have successfully created a new account with gatepass. Check your email, an activation mail has been sent to you. After activating your account, you will have access to the application",
@@ -172,8 +151,7 @@ exports.registerByInvite = async (req, res) => {
 				});
 			}
 		}
-
-		await ipgeolocationApi.getGeolocation(handleResponse);
+		ipgeolocationApi.getGeolocation(handleResponse);
 	} catch (error) {
 		console.log(red(`Error from user sign up by invite >>> ${error.message}`));
 		return res.status(500).json({
@@ -189,21 +167,17 @@ exports.accountVerification = async (req, res) => {
 	const { token, email } = req.query;
 	try {
 		const { userId } = jwt.verify(token, EMAIL_SECRET);
-
 		const user = await User.findById(userId);
-
 		if (!user) {
 			return res.status(401).json({
 				message: "Invalid registration link!",
 			});
 		}
-
 		if (user.confirmed) {
 			return res.status(409).json({
 				message: "Your account has already been activated",
 			});
 		}
-
 		const foundUser = await User.findOneAndUpdate(
 			{ _id: userId },
 			{ confirmed: true }
@@ -213,7 +187,6 @@ exports.accountVerification = async (req, res) => {
 				message: `Account with the email: ${email} does not exist`,
 			});
 		}
-
 		return res.status(200).json({
 			message:
 				"Welcome on board, your account has been activated. Proceed to sign in",
@@ -244,7 +217,6 @@ exports.userSignIn = async (req, res) => {
 				message: "You Entered an incorrect Email or Password",
 			});
 		}
-
 		if (!user.confirmed) {
 			return res.status(401).json({
 				message: "You have to verify your account",
@@ -257,7 +229,6 @@ exports.userSignIn = async (req, res) => {
 				message: "You Entered an incorrect Email or Password",
 			});
 		}
-
 		ipgeolocationApi.getGeolocation(handleResponse);
 
 		let signInLocation;

@@ -11,7 +11,6 @@ const userSchema = new Schema(
 			type: Schema.Types.ObjectId,
 			ref: "Organisation",
 		},
-
 		email: {
 			type: String,
 			required: true,

@@ -158,10 +158,51 @@ const sendInviteNotification = async (data, user, application) => {
 	return;
 };
 
+const sendAdminRemovalMail = async (data, application) => {
+	const userEmail = data.email;
+	const msg = {
+		from: EMAIL_ADDRESS,
+		to: userEmail,
+		subject: "Admin Removal From An Application",
+		text: "testing text",
+		template: "adminRemoval",
+		context: {
+			name: data.fullname,
+			appName: application,
+		},
+	};
+
+	let { messageId } = await transport.sendMail(msg);
+	console.log(blue(`mail sent succcessfully >>> ${messageId}`));
+	return;
+};
+
+const sendAdminRemovalMailToAdmin = async (data, application, req) => {
+	const userEmail = req.user.email;
+	const msg = {
+		from: EMAIL_ADDRESS,
+		to: userEmail,
+		subject: "Admin Removal From An Application",
+		text: "testing text",
+		template: "adminRemovalToAdmin",
+		context: {
+			name: req.user.fullname,
+			appName: application,
+			userName: data.fullname,
+		},
+	};
+
+	let { messageId } = await transport.sendMail(msg);
+	console.log(blue(`mail sent succcessfully >>> ${messageId}`));
+	return;
+};
+
 module.exports = {
 	sendActivationEmail,
 	sendInvalidUserLoginAttempt,
 	passwordResetEmail,
 	sendAppAdminInvite,
 	sendInviteNotification,
+	sendAdminRemovalMail,
+	sendAdminRemovalMailToAdmin,
 };

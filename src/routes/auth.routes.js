@@ -43,7 +43,6 @@ authRouter.patch(
 	validateError,
 	resetPassword
 );
-
 authRouter.post(
 	"/change-password",
 	changePasswordValRules(),

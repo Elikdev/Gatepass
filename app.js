@@ -29,25 +29,24 @@ app.get("/", (req, res) => {
 	});
 });
 
-// use auth middleware
 app.use(checkAuth);
 app.use("/api/v1/auth", authRouter);
 
 app.use("/api/v1/apps", appRouter);
 app.use("/api/v1/services", checkAuthServiceToken, serviceRouter);
 
-// catch 404 and forward to error handler
 app.use((req, res, next) => {
 	const error = new Error("Not found");
 	error.status = 404;
 	next(error);
 });
 
-// error handler
 app.use((error, req, res, next) => {
 	if (error.status === 404) {
 		return res.status(404).json({
-			errors: { message: "Invalid Request, Resource not found" },
+			errors: { 
+				message: "Invalid Request, Resource not found", 
+			},
 		});
 	}
 	if (!isProduction) {
@@ -60,7 +59,8 @@ app.use((error, req, res, next) => {
 	}
 	return res.status(error.status || 500).json({
 		errors: {
-			message: "Something went wrong, please try again or check back for a fix",
+			message: 
+				"Something went wrong, please try again or check back for a fix",
 		},
 	});
 });
