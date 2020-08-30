@@ -12,11 +12,8 @@ const {
 } = require("../middlewares/validation");
 
 router.get("/auth", catchToken);
-
 router.get("/:appName/users", viewAppUsersRules(), validateError, getUsers);
-
 router.get("/:appName/:email", getSingleUser);
-
 router.patch(
 	"/:appName/change/:id",
 	changeUserStatusRules(),

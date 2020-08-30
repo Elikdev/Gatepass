@@ -5,6 +5,7 @@ const secureRoutes = [
 	"/api/v1/apps",
 	"/api/v1/apps/update/:appId",
 	"/api/v1/apps/:appId/add-admins",
+	"/api/v1/apps/:appId/remove-admins/:userId",
 ];
 
 const unsecureRoutes = [
@@ -26,6 +27,7 @@ const serviceRoutes = [
 	"/api/v1/services/auth",
 	"/api/v1/services/:appName/users",
 ];
+
 module.exports = {
 	secureRoutes,
 	unsecureRoutes,

@@ -7,6 +7,7 @@ const {
 	addAdminToApp,
 	acceptAppAdminInvite,
 	catchApp,
+	removeAdminFromApp,
 } = require("../controllers/app.controllers");
 const {
 	appRegisterValRules,
@@ -17,8 +18,7 @@ const {
 	validateError,
 } = require("../middlewares/validation");
 const { checkAppToken } = require("../middlewares/checkAuth");
-
-const checkAppId = require("../middlewares/validateMongooseId");
+const { checkAppId, checkUserId } = require("../middlewares/validateMongooseId");
 
 router.post("/new", appRegisterValRules(), validateError, registerNewApp);
 router.put(
@@ -44,4 +44,11 @@ router.post(
 	addAdminToApp
 );
 router.patch("/invitation/accept", acceptAppAdminInvite);
+router.put(
+	"/:appId/remove-admin/:userId", 
+	checkAppId,
+	checkUserId, 
+	removeAdminFromApp
+);
+
 module.exports = router;

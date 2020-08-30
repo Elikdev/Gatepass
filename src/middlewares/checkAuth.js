@@ -4,7 +4,6 @@ const authHelper = require("../helpers/auth");
 
 // middleware to authenticate users accessing secure routes
 const checkAuth = async (req, res, next) => {
-	// did this because path with params do not get authenticated by this middleware
 	if (
 		routes.secureRoutes.includes(req.path) ||
 		!routes.unsecureRoutes.includes(req.path)

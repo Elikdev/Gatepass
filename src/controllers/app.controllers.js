@@ -1,11 +1,14 @@
 const jwt = require("jsonwebtoken");
 const { red } = require("chalk");
-const { App, User, Organisation } = require("../models/index");
-const { APP_SECRET, EMAIL_SECRET, INVITE_SECRET } = require("../config/index");
+const { App, User, Organisation } = require("../models");
+const { APP_SECRET, EMAIL_SECRET, INVITE_SECRET } = require("../config");
 const {
 	sendAppAdminInvite,
 	sendInviteNotification,
+	sendAdminRemovalMail,
+	sendAdminRemovalMailToAdmin,
 } = require("../helpers/nodemailer");
+const { response } = require("../../app");
 
 exports.registerNewApp = async (req, res) => {
 	const { app_name, description, unique_id } = req.body;
@@ -56,22 +59,18 @@ exports.registerNewApp = async (req, res) => {
 	}
 };
 
-// Disable and enable application
 exports.changeAppStatus = async (req, res) => {
 	let { status } = req.query;
 	const { app_name } = req.body;
 	const user = req.user;
 
 	try {
-		//check if app is in the db
 		const app = await App.findOne({ app_name });
 		if (!app) {
 			return res.status(404).json({
 				message: "There is no app with such name on gatepass",
 			});
 		}
-
-		//check if user is the owner of the application
 		const owner = await User.findOne({ _id: user._id });
 		if (!owner.apps.includes(app._id)) {
 			return res.status(401).json({
@@ -79,11 +78,8 @@ exports.changeAppStatus = async (req, res) => {
 					"You do not have access to change the status of this application",
 			});
 		}
-
 		status = status.toString();
-
 		let appStatus;
-
 		if (status == "enable") {
 			if (app.status == "active") {
 				return res.status(409).json({
@@ -99,14 +95,12 @@ exports.changeAppStatus = async (req, res) => {
 					"Your application's status has been successfully set to active",
 			});
 		}
-
 		if (status == "disable") {
 			if (app.status == "disabled") {
 				return res.status(409).json({
 					message: "Application was initially disabled ",
 				});
 			}
-
 			appStatus = await App.findOneAndUpdate(
 				{ _id: app._id },
 				{ status: "disabled" }
@@ -167,7 +161,6 @@ exports.viewAllUserApps = async (req, res) => {
 				.exec();
 			count = await App.countDocuments({ app_admins: _id });
 		}
-
 		if (count === 0) {
 			return res.status(404).json({
 				message:
@@ -217,7 +210,6 @@ exports.updateApplication = async (req, res) => {
 				message: "App is disabled. You need to enable it before you can use it",
 			});
 		}
-
 		return res.status(200).json({
 			message: "Application has been updated successfully",
 		});
@@ -237,15 +229,12 @@ exports.addAdminToApp = async (req, res) => {
 		{ appId } = req.params,
 		{ _id } = req.user;
 	try {
-		// check if app is in the db
 		const app = await App.findById(appId);
 		if (!app) {
 			return res.status(404).json({
 				message: "App does not exist on Gatepass",
 			});
 		}
-
-		//check if the owner is the one adding admin to the application
 		const owner = await User.findOne({ _id: _id, role: "OWNER" }).populate(
 			"organisation",
 			"name"
@@ -256,24 +245,18 @@ exports.addAdminToApp = async (req, res) => {
 					"You do not have write access to add an administrator to this application",
 			});
 		}
-
-		// check if invitee exists in db
 		let newAdmin = await User.findOne({ email });
 		if (!newAdmin) {
 			newAdmin = {
 				email: email, // a new object is created for invitee so that the mail is sent regardlessly
 			};
 		}
-
-		// check if the new admin to be added is already an admin on the app
 		const userAlreadyAdded = app.app_admins.includes(newAdmin._id);
 		if (userAlreadyAdded) {
 			return res.status(409).json({
 				message: "User already added as an admin to the application",
 			});
 		}
-
-		//  send invitation link with token
 		await sendAppAdminInvite(newAdmin, owner, app, req);
 		return res.status(200).json({
 			message: "An invitation mail has been sent to the invitee's address.",
@@ -296,9 +279,7 @@ exports.acceptAppAdminInvite = async (req, res) => {
 
 	try {
 		const { userId, appId, orgName } = jwt.verify(token, EMAIL_SECRET);
-
 		const user = await User.findOne({ _id: userId });
-
 		const inviteToken = jwt.sign(
 			{ email: e, appId: appId, orgName: orgName },
 			INVITE_SECRET,
@@ -306,7 +287,6 @@ exports.acceptAppAdminInvite = async (req, res) => {
 				expiresIn: "1hr",
 			}
 		);
-
 		if (!user) {
 			return res.status(401).json({
 				message:
@@ -314,25 +294,20 @@ exports.acceptAppAdminInvite = async (req, res) => {
 				link: `http:\/\/${req.headers.host}\/api\/v1\/auth\/register-by-invitation?t=${inviteToken}`,
 			});
 		}
-
 		const app = await App.findById(appId);
-
 		if (!app) {
 			return res.status(401).json({
 				message: "Invalid registration link!",
 			});
 		}
-
 		const userAlreadyAnAdmin = app.app_admins.includes(userId);
 		if (userAlreadyAnAdmin) {
 			return res.status(409).json({
 				message: "You already accepted to be an admin on the application",
 			});
 		}
-
 		app.app_admins.push(userId);
 		await app.save();
-
 		//  you can comment out this if it's not necessary when testing
 		for (const appAdmin of app.app_admins) {
 			const eachAdmin = await User.findById(appAdmin);
@@ -340,7 +315,6 @@ exports.acceptAppAdminInvite = async (req, res) => {
 			await sendInviteNotification(eachAdmin, user, app.app_name);
 			console.log("====sent====");
 		}
-
 		return res.status(200).json({
 			message: "Invitation accepted successfully.",
 		});
@@ -362,19 +336,89 @@ exports.acceptAppAdminInvite = async (req, res) => {
 exports.catchApp = async (req, res) => {
 	try {
 		const app = req.app;
-
 		if (!app) {
 			return res.status(404).json({
 				message: "Error in getting app",
 			});
 		}
-
 		return res.status(200).json({
 			message: "Worked!",
 			app: app,
 		});
 	} catch (error) {
 		console.log(red(`Error in getting application >>> ${error.message}`));
+		return res.status(500).json({
+			errors: {
+				message:
+					"Something went wrong, please try again or check back for a fix",
+			},
+		});
+	}
+};
+
+exports.removeAdminFromApp = async (req, res) => {
+	const { appId, userId } = req.params,
+		{ role, apps } = req.user;
+	try {
+		const app = await App.findById(appId);
+		if (!app) {
+			return res.status(404).json({
+				message: "App does not exist on Gatepass or has been deleted",
+			});
+		}
+		if (role !== "OWNER" && !apps.includes(app._id)) {
+			return res.status(401).json({
+				message:
+					"You do not have write access to remove an administrator from this application",
+			});
+		}
+		const user = await User.findOne({ _id: userId });
+		if (!user) {
+			return res.status(404).json({
+				message:
+					"User does not exist on this application",
+			});
+		}
+		//if (!user.apps.includes(appId)) or
+		const userNotAnAdmin = !app.app_admins.includes(userId);
+		if (userNotAnAdmin) {
+			return res.status(409).json({
+				message: "User has already been removed from the application",
+			});
+		}
+		const deleteUserFromApp = await App.findByIdAndUpdate(
+			appId, 
+			{
+				$pull: { 
+					app_admins: user._id, 
+				},
+			},
+			{ 
+				new: true, 
+			}
+		);
+		const deleteAppFromUser = await User.findByIdAndUpdate(
+			userId, 
+			{
+				$pull: { 
+					apps: app._id, 
+				},
+			},
+			{ 
+				new: true, 
+			}
+		);
+		//send message that to the user that he has been removed 
+		await sendAdminRemovalMail(user, app.app_name);
+		// send message to the admin that the user has been removed
+		await sendAdminRemovalMailToAdmin(user, app.app_name, req);
+		return res.status(200).json({
+			message: "User removed as an admin successfully!",
+			app: deleteUserFromApp,
+			user: deleteAppFromUser,
+		});
+	} catch (error) {
+		console.log(red(`Error from removing app admin >>> ${error.message}`));
 		return res.status(500).json({
 			errors: {
 				message:

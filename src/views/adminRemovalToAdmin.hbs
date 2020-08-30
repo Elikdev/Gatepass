@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Invite Acceptance</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            font-family: Helvetica, "sans-serif";
+        }
+
+        .header {
+            background: rgb(2, 0, 36);
+            background: linear-gradient(90deg,
+                    rgba(2, 0, 36, 1) 0%,
+                    rgba(94, 121, 9, 1) 36%,
+                    rgb(15, 112, 75) 100%);
+            color: #ffffff;
+            text-align: center;
+            padding-top: 4rem;
+            padding-bottom: 4rem;
+            width: 80%;
+            margin: 0 auto;
+        }
+
+        .header h1 {
+            font-weight: 700;
+            font-size: 4rem;
+            letter-spacing: 0.2rem;
+        }
+
+        .header small {
+            margin-top: 0.6rem;
+            font-size: 0.7rem;
+            word-spacing: 0.03rem;
+        }
+
+        .section {
+            width: 80%;
+            margin: 0 auto;
+            text-align: center;
+            padding-top: 3rem;
+        }
+
+        .section h1 {
+            color: #3179ecd8;
+            margin-bottom: 3rem;
+            font-size: 3rem;
+        }
+
+        .section p {
+            font-size: 1rem;
+            margin: 2rem 0;
+        }
+
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>Gatepass</h1>
+        <small>seamless plug and play authentication solution</small>
+    </div>
+
+    <div class="section">
+        <h1>Admin Removal From Application</h1>
+        <p>
+            Hi {{name}}, <br>
+            This is to notify you that {{userName}} has been successfully removed as an admin from <strong>{{appName}}</strong>. <br>
+            He no longer has admin previleges to this application.
+        </p>
+
+        <p>
+            <em>Note:</em> You're receiving this mail because you are subscribed to it automatically.
+        </p>
+    </div>
+</body>
+
+</html>
