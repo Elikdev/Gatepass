@@ -18,7 +18,10 @@ const {
 	validateError,
 } = require("../middlewares/validation");
 const { checkAppToken } = require("../middlewares/checkAuth");
-const { checkAppId, checkUserId } = require("../middlewares/validateMongooseId");
+const {
+	checkAppId,
+	checkUserId,
+} = require("../middlewares/validateMongooseId");
 
 router.post("/new", appRegisterValRules(), validateError, registerNewApp);
 router.put(
@@ -45,9 +48,9 @@ router.post(
 );
 router.patch("/invitation/accept", acceptAppAdminInvite);
 router.put(
-	"/:appId/remove-admin/:userId", 
+	"/:appId/remove-admin/:userId",
 	checkAppId,
-	checkUserId, 
+	checkUserId,
 	removeAdminFromApp
 );
 

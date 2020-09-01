@@ -170,7 +170,7 @@ exports.accountVerification = async (req, res) => {
 		const user = await User.findById(userId);
 		if (!user) {
 			return res.status(401).json({
-				message: "Invalid registration link!",
+				message: "Invalid activation link!",
 			});
 		}
 		if (user.confirmed) {
