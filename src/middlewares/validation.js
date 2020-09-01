@@ -148,7 +148,11 @@ const viewAllUserAppsRules = () => {
 
 const updateUserAppRules = () => {
 	return [
-		body("app_name").optional(),
+		body("app_name")
+			.isEmpty()
+			.withMessage(
+				"You have no write access to update the name of the application"
+			),
 		body("description")
 			.optional()
 			.isLength({ min: 10 })
@@ -157,7 +161,9 @@ const updateUserAppRules = () => {
 			),
 		body("app_token")
 			.isEmpty()
-			.withMessage("You have no write access to update the app token"),
+			.withMessage(
+				"You have no write access to update the token of the application"
+			),
 	];
 };
 
@@ -171,7 +177,7 @@ const viewAppUsersRules = (req, res, next) => {
 	return [
 		check("filter")
 			.optional()
-			.isIn(["axtive", "disabled"])
+			.isIn(["active", "disabled"])
 			.withMessage("Invalid filter value"),
 	];
 };

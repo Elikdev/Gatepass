@@ -135,6 +135,7 @@ exports.viewAllUserApps = async (req, res) => {
 					app_admins: _id,
 					status: "active",
 				})
+					.select("-__v -app_token")
 					.limit(limit * 1)
 					.skip((page - 1) * limit)
 					.exec();
@@ -144,6 +145,7 @@ exports.viewAllUserApps = async (req, res) => {
 					app_admins: _id,
 					status: "disabled",
 				})
+					.select("-__v -app_token")
 					.limit(limit * 1)
 					.skip((page - 1) * limit)
 					.exec();
@@ -156,6 +158,7 @@ exports.viewAllUserApps = async (req, res) => {
 			apps = await App.find({
 				app_admins: _id,
 			})
+				.select("-__v -app_token")
 				.limit(limit * 1)
 				.skip((page - 1) * limit)
 				.exec();
@@ -191,12 +194,12 @@ exports.updateApplication = async (req, res) => {
 	const { appId } = req.params;
 	const { _id } = req.user;
 	try {
-		const app = App.findOneAndUpdate(
+		const app = await App.findOneAndUpdate(
 			{
 				_id: appId,
 				app_admins: _id,
 			},
-			{ ...req.body },
+			req.body,
 			{ new: true }
 		);
 
@@ -259,7 +262,8 @@ exports.addAdminToApp = async (req, res) => {
 		}
 		await sendAppAdminInvite(newAdmin, owner, app, req);
 		return res.status(200).json({
-			message: "An invitation mail has been sent to the invitee's address.",
+			message:
+				"An invitation mail has been sent to the invitee's email address.",
 		});
 	} catch (error) {
 		console.log(
@@ -291,7 +295,7 @@ exports.acceptAppAdminInvite = async (req, res) => {
 			return res.status(401).json({
 				message:
 					"You do not have an account on gatepass. So you need to register with this link",
-				link: `http:\/\/${req.headers.host}\/api\/v1\/auth\/register-by-invitation?t=${inviteToken}`,
+				link: `http:\/\/${req.headers.host}\/api\/v1\/auth\/register-by-invite?t=${inviteToken}`,
 			});
 		}
 		const app = await App.findById(appId);
@@ -341,6 +345,21 @@ exports.catchApp = async (req, res) => {
 				message: "Error in getting app",
 			});
 		}
+		//check if app is still enabled
+		const appEnabled = await App.findOne({ app_name: app.app_name });
+
+		if (!appEnabled) {
+			return res.status(404).json({
+				message: "Error in getting app",
+			});
+		}
+
+		if (appEnabled.status == "disabled") {
+			return res.status(401).json({
+				message: "Application can not use auth-service. It has been disabled",
+			});
+		}
+
 		return res.status(200).json({
 			message: "Worked!",
 			app: app,
@@ -375,8 +394,7 @@ exports.removeAdminFromApp = async (req, res) => {
 		const user = await User.findOne({ _id: userId });
 		if (!user) {
 			return res.status(404).json({
-				message:
-					"User does not exist on this application",
+				message: "User does not exist on this application",
 			});
 		}
 		//if (!user.apps.includes(appId)) or
@@ -387,28 +405,28 @@ exports.removeAdminFromApp = async (req, res) => {
 			});
 		}
 		const deleteUserFromApp = await App.findByIdAndUpdate(
-			appId, 
+			appId,
 			{
-				$pull: { 
-					app_admins: user._id, 
+				$pull: {
+					app_admins: user._id,
 				},
 			},
-			{ 
-				new: true, 
+			{
+				new: true,
 			}
 		);
 		const deleteAppFromUser = await User.findByIdAndUpdate(
-			userId, 
+			userId,
 			{
-				$pull: { 
-					apps: app._id, 
+				$pull: {
+					apps: app._id,
 				},
 			},
-			{ 
-				new: true, 
+			{
+				new: true,
 			}
 		);
-		//send message that to the user that he has been removed 
+		//send message that to the user that he has been removed
 		await sendAdminRemovalMail(user, app.app_name);
 		// send message to the admin that the user has been removed
 		await sendAdminRemovalMailToAdmin(user, app.app_name, req);
